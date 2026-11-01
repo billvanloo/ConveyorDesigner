@@ -1,0 +1,13 @@
+{
+  "about": "Shared fixtures for spec 05 §9: the Conveyor Designer's embedded motor and shaft calculations must give identical results to the Motor and Drive Matcher (spec 02) and the Shaft and Beam Workbench (spec 01). The ecosystem tests run these through MotorCore and BeamCore directly; ConveyorDesigner/dev/test.js runs them through its own core and checks the numbers are the same, not just close. Units are SI. CD-5 and CD-6 use the table values (0.68 N·m, 95.5 rpm) as ERRATA notes; CD-7 uses the unrounded side load chained from CD-3.",
+  "motor": [
+    { "id": "CD-5", "Ts": 2, "N0": 300, "eta": 0.9, "TL": 0.68, "D": 0.06, "ratio": 3.14, "vTarget": 0.3,
+      "expect": { "Nout": 84.0, "vBelt": 0.264, "speedErr": -12.0 } },
+    { "id": "CD-6", "Ts": 2, "N0": 300, "eta": 0.9, "TL": 0.68, "D": 0.06, "Np": 95.5, "vTarget": 0.3,
+      "expect": { "iHigh": 2.70, "vBelt": 0.300 } }
+  ],
+  "shaft": [
+    { "id": "CD-7", "R": 51.372977, "Lb": 0.1, "T": 0.67689, "d": 0.008, "Sy": 400e6,
+      "expect": { "M": 1.28, "tauMax": 14.4e6, "n": 13.8, "RA": 25.7, "RB": 25.7 } }
+  ]
+}

@@ -1,0 +1,1 @@
+Full update (change + render), median of 15: 5.6 ms

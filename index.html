@@ -1,0 +1,2964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Conveyor Designer: the capstone design tool. Turn a brief into requirements, then size the belt pull, power, pulley, motor and ratio, belt tensions and pulley shaft, with every requirement checked as you go. Engineered by the Numbers.">
+<title>Conveyor Designer</title>
+<link rel="icon" href="data:,">
+<script>
+  (function () {
+    try {
+      var t = JSON.parse(localStorage.getItem('ebtn-theme') || 'null');
+      if (t !== 'light' && t !== 'dark') t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    } catch (e) { document.documentElement.setAttribute('data-theme', 'light'); }
+  })();
+</script>
+<style>
+/* BEGIN vendor:shell.css */
+/* ecosystem/shell/shell.css v1.0.0
+   Shared look for the Engineered by the Numbers tools. Palette and header,
+   readout and footer patterns follow the Gear Train Workbench. Light theme is
+   "drafting paper"; data-theme="dark" is "blueprint". Every colour a tool
+   draws should come from these tokens (read them with app.pal()). */
+:root, :root[data-theme="light"]{
+  --paper:#F6F5F0; --grid-minor:#E7E5DC; --grid-major:#D8D5C8;
+  --ink:#23272C; --ink-soft:#555B63; --line:#C9C6BA;
+  --steel:#DCE1E6; --steel-edge:#7E8892;
+  --dykem:#1D5FA8; --dykem-soft:#E3ECF7;
+  --brass:#B08A2E; --brass-soft:#F5EBD2; --brass-ink:#7A5A16;
+  --pass:#2E7D46; --fail:#B3402F; --warn:#8A5A00;
+  --pos-fill:#DCE6F5; --neg-fill:#F6DDD8;
+  --dro-bg:#1D2126; --dro-amber:#FFB000; --dro-label:#8B929B;
+  --panel:#F1EFE8; --field:#ffffff; --rule:#B9B6AA; --th-bg:#EDEBE2;
+  --scrim:rgba(35,39,44,.5); --badge-text:#ffffff;
+  --font-ui:"Avenir Next","Segoe UI","Trebuchet MS",system-ui,sans-serif;
+  --font-mono:ui-monospace,"Cascadia Mono","SF Mono",Consolas,Menlo,monospace;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --paper:#0C2B4E; --grid-minor:#123659; --grid-major:#1A4771;
+  --ink:#EAF2FB; --ink-soft:#A8C2DC; --line:#1E5183;
+  --steel:#5E86AB; --steel-edge:#E4EFFA;
+  --dykem:#5FD0E8; --dykem-soft:#123659;
+  --brass:#FFC94D; --brass-soft:#2A2410; --brass-ink:#FFC94D;
+  --pass:#57D493; --fail:#FF8A73; --warn:#FFC94D;
+  --pos-fill:#1D4D7A; --neg-fill:#5A2E3A;
+  --dro-bg:#071B31; --dro-amber:#FFC94D; --dro-label:#A8C2DC;
+  --panel:#0F3157; --field:#123659; --rule:#1E5183; --th-bg:#123659;
+  --scrim:rgba(3,15,28,.65); --badge-text:#08243F;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font-ui);color:var(--ink);background:var(--paper);display:flex;flex-direction:column;overflow:hidden;font-size:14px}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--dykem)}
+
+/* ---------- Header / title block ---------- */
+.sh-header{display:flex;align-items:center;gap:10px;padding:7px 12px;border-bottom:2px solid var(--ink);background:var(--paper);flex-wrap:wrap}
+.titleblock{display:flex;flex-direction:column;line-height:1.15}
+.titleblock .t1{font-size:15px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+.titleblock .t2{font-size:11.5px;letter-spacing:.06em;color:var(--ink-soft);text-transform:uppercase;white-space:nowrap}
+.modes{display:flex;border:1.5px solid var(--ink);border-radius:3px;overflow:hidden}
+.modes button{font:600 12.5px var(--font-ui);letter-spacing:.05em;text-transform:uppercase;padding:6px 11px;border:none;background:transparent;color:var(--ink);cursor:pointer}
+.modes button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.tabs{display:flex;border:1.5px solid var(--ink);border-radius:3px;overflow:hidden}
+.tabs [role="tab"]{font:600 12.5px var(--font-ui);letter-spacing:.05em;padding:6px 11px;border:none;border-right:1.5px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer}
+.tabs [role="tab"]:last-child{border-right:none}
+.tabs [role="tab"][aria-selected="true"]{background:var(--ink);color:var(--paper)}
+.tabs [role="tab"]:focus-visible{outline-offset:-4px;outline-color:var(--brass)}
+.chwrap{display:flex;align-items:center;gap:6px;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft)}
+.chwrap[hidden],.namewrap[hidden],.hbtns button[hidden]{display:none}
+.chwrap select{font:13px var(--font-ui);border:1.5px solid var(--ink);border-radius:3px;background:var(--field);color:var(--ink);padding:3px 4px;max-width:260px;text-transform:none;letter-spacing:0}
+.sh-brief{padding:6px 14px;background:var(--panel);border-bottom:1.5px solid var(--line);font-size:13.5px;line-height:1.45}
+.sh-brief[hidden]{display:none}
+.sh-brief .note{color:var(--ink-soft);margin-left:6px}
+.spacer{flex:1}
+.namewrap{display:flex;align-items:center;gap:6px;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft)}
+.namewrap input{font:15px var(--font-ui);border:none;border-bottom:1.5px solid var(--ink);background:transparent;padding:3px 4px;width:118px;color:var(--ink)}
+.hbtns{display:flex;gap:5px;flex-wrap:wrap}
+.hbtns button{font:600 12.5px var(--font-ui);letter-spacing:.02em;padding:6px 8px;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);border-radius:3px;cursor:pointer}
+.hbtns button:hover{background:var(--ink);color:var(--paper)}
+.hbtns button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+/* ---------- Small-screen notice ---------- */
+.sh-small{display:none;align-items:center;gap:10px;padding:6px 14px;background:var(--brass-soft);color:var(--ink);border-bottom:1.5px solid var(--brass);font-size:13px}
+.sh-small button{margin-left:auto;border:1.5px solid var(--ink);background:transparent;border-radius:3px;padding:2px 8px;cursor:pointer}
+@media (max-width:767.98px){ .sh-small:not([hidden]){display:flex} }
+
+/* ---------- Main three-column layout ---------- */
+.sh-main{flex:1;display:grid;grid-template-columns:300px minmax(0,1fr) 350px;min-height:0}
+.sh-col{overflow-y:auto;min-height:0}
+.sh-inputs{background:var(--panel);border-right:1.5px solid var(--line);padding:10px 12px 18px}
+.sh-results{background:var(--panel);border-left:1.5px solid var(--line);padding:10px 12px 18px}
+.sh-stage{padding:12px 14px;background-color:var(--paper);
+  background-image:linear-gradient(var(--grid-minor) 1px,transparent 1px),linear-gradient(90deg,var(--grid-minor) 1px,transparent 1px);
+  background-size:20px 20px}
+@media (max-width:1180px){ .sh-main{grid-template-columns:270px minmax(0,1fr) 310px} }
+@media (max-width:1023.98px){
+  body{overflow:auto}
+  .sh-main{grid-template-columns:1fr;min-height:auto}
+  .sh-col{overflow:visible}
+  .sh-inputs,.sh-results{border:none;border-top:1.5px solid var(--line)}
+  .sh-stage{order:-1}
+}
+
+/* ---------- Input panel ---------- */
+.sec-h{font:700 12px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin:14px 0 6px;padding-bottom:3px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.sec-h:first-child{margin-top:2px}
+.fld{display:grid;grid-template-columns:minmax(0,1fr) minmax(108px,auto);align-items:center;gap:4px 8px;margin:5px 0}
+.fld>label,.fld>.lbl{font-size:13.5px;line-height:1.25}
+.fld .ctl{display:flex;align-items:center;gap:4px}
+.fld input[type=text],.fld select,.fld input[type=number]{width:80px;min-width:0;font:14px var(--font-mono);padding:4px 6px;border:1.5px solid var(--steel-edge);border-radius:3px;background:var(--field);color:var(--ink);text-align:right}
+.fld select{text-align:left;font-family:var(--font-ui);font-size:13.5px;width:auto;max-width:176px}
+.fld .unit{font-size:12px;color:var(--ink-soft);white-space:nowrap}
+.fld input[aria-invalid="true"]{border-color:var(--fail);border-width:2px}
+.fld .err{grid-column:1/-1;font-size:12.5px;line-height:1.35;color:var(--fail);font-weight:600}
+.fld .err:empty{display:none}
+.fld .err::before{content:"⚠ "}
+.fld.wide{grid-template-columns:1fr}
+.chk{display:flex;align-items:center;gap:7px;font-size:13.5px;margin:6px 0;cursor:pointer}
+.chk input{width:16px;height:16px;accent-color:var(--dykem)}
+.note{font-size:12.5px;line-height:1.45;color:var(--ink-soft);margin:6px 0}
+.note.warn{color:var(--warn);font-weight:600}
+.note.warn::before{content:"⚠ "}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.btn{font:600 13px var(--font-ui);letter-spacing:.03em;padding:6px 10px;border:1.5px solid var(--ink);background:var(--field);color:var(--ink);border-radius:3px;cursor:pointer}
+.btn:hover{background:var(--ink);color:var(--paper)}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn.primary:hover{background:var(--dykem);border-color:var(--dykem);color:var(--badge-text)}
+.btn.small{padding:3px 7px;font-size:12px}
+.btn.danger{border-color:var(--fail);color:var(--fail)}
+.btn.danger:hover{background:var(--fail);color:var(--badge-text)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:3px;overflow:hidden}
+.seg button{font:600 12.5px var(--font-ui);padding:4px 10px;border:none;background:var(--field);color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.itemcard{border:1.5px solid var(--line);border-radius:4px;background:var(--field);padding:6px 8px;margin:6px 0}
+.itemcard.sel{border-color:var(--dykem);box-shadow:0 0 0 1px var(--dykem)}
+.itemcard .ih{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px}
+.itemcard .ih input{flex:1;min-width:0;font:600 13px var(--font-ui);border:none;border-bottom:1px dashed var(--line);background:transparent;padding:1px 2px}
+
+/* ---------- Stage (drawing) ---------- */
+.drawcard{background:var(--paper);border:1.5px solid var(--ink);border-radius:2px;position:relative}
+.drawcard svg{display:block;width:100%;height:auto;touch-action:none;user-select:none}
+.drawcard svg:focus-visible{outline:3px solid var(--dykem);outline-offset:-3px}
+.cap{font-size:12.5px;line-height:1.45;color:var(--ink-soft);margin-top:6px}
+.stationro{margin-top:8px;font:13px var(--font-mono);background:var(--field);border:1.5px solid var(--line);border-radius:3px;padding:6px 9px;min-height:2.2em}
+
+/* ---------- Results ---------- */
+.ro{width:100%;border-collapse:collapse;font-size:13.5px}
+.ro th{text-align:left;font-weight:400;padding:4px 4px 4px 0;border-bottom:1px dotted var(--line);vertical-align:top}
+.ro td{text-align:right;font:700 14px var(--font-mono);padding:4px 0;border-bottom:1px dotted var(--line);white-space:nowrap}
+.ro td.wrap{white-space:normal}
+.ro tr.sub th{padding-left:12px;color:var(--ink-soft)}
+.masked{display:inline-block;min-width:3.2em;text-align:center;border:1.5px dashed var(--ink-soft);border-radius:3px;color:var(--ink-soft);font-weight:400}
+.verdict{font-weight:700}
+.verdict.pass{color:var(--pass)}
+.verdict.fail{color:var(--fail)}
+.verdict.pass::before{content:"✓ "}
+.verdict.fail::before{content:"✗ "}
+.verdict.info{color:var(--warn)}
+.verdict.info::before{content:"● "}
+.reason{font:italic 13px var(--font-ui);color:var(--ink-soft);white-space:normal}
+
+/* ---------- Predict first ---------- */
+.pfbox{margin-top:12px;border:1.5px solid var(--ink);border-left-width:5px;border-radius:3px;background:var(--field);padding:9px 10px}
+.pfbox h3{font:700 12px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.pfrow{display:grid;grid-template-columns:minmax(0,1fr) 92px 40px;gap:6px;align-items:center;margin:5px 0;font-size:13.5px}
+.pfrow input{font:14px var(--font-mono);padding:4px 6px;border:1.5px solid var(--steel-edge);border-radius:3px;background:var(--field);color:var(--ink);text-align:right;width:100%}
+.pfrow .unit{font-size:12px;color:var(--ink-soft)}
+.pfrow select{font:13.5px var(--font-ui);padding:3px 4px;border:1.5px solid var(--steel-edge);border-radius:3px;background:var(--field);color:var(--ink);width:100%}
+.pfgroup{border-top:1px dotted var(--line);padding-top:6px;margin-top:6px}
+.pfgroup h4{font:700 11.5px var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+.pfmsg{font-size:13px;line-height:1.45;margin:5px 0;padding:5px 7px;border-left:3px solid var(--line);background:var(--panel)}
+.pfmsg.match{border-left-color:var(--pass)}
+.pfmsg.close{border-left-color:var(--brass)}
+.pfmsg b{font-family:var(--font-mono)}
+.pftag{font:700 11px var(--font-ui);letter-spacing:.08em;text-transform:uppercase;padding:1px 5px;border-radius:2px;margin-left:4px}
+.pftag.match{background:var(--pass);color:var(--badge-text)}
+.pftag.close{background:var(--brass-ink);color:var(--badge-text)}
+
+/* ---------- Show the working ---------- */
+.working{margin-top:12px;border:1.5px solid var(--line);border-radius:3px;background:var(--field)}
+.working>summary{cursor:pointer;padding:7px 10px;font:700 12px var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+.working[open]>summary{color:var(--ink);border-bottom:1px solid var(--line)}
+.wk{list-style:none;padding:6px 10px 8px;counter-reset:wk}
+.wk li{counter-increment:wk;padding:6px 0;border-bottom:1px dotted var(--line);font-size:13px;line-height:1.5}
+.wk li:last-child{border-bottom:none}
+.wk .wt{font-weight:700}
+.wk .wt::before{content:counter(wk) ". "}
+.wk .wf,.wk .ws{font-family:var(--font-mono);font-size:12.5px;overflow-wrap:anywhere}
+.wk .wr{font-family:var(--font-mono);font-weight:700}
+.wk .wsrc{font-size:11.5px;color:var(--ink-soft);font-style:italic}
+.wk-h{font:700 11.5px var(--font-ui);letter-spacing:.08em;text-transform:uppercase;padding:8px 10px 0;color:var(--ink)}
+.sh-dlg textarea{width:100%;font:12.5px var(--font-mono);border:1.5px solid var(--steel-edge);border-radius:3px;background:var(--field);color:var(--ink);padding:6px}
+
+/* ---------- Dialogs ---------- */
+dialog.sh-dlg{margin:auto;border:2px solid var(--ink);border-radius:5px;background:var(--paper);color:var(--ink);max-width:min(760px,94vw);width:100%;max-height:86vh;padding:0}
+dialog.sh-dlg::backdrop{background:var(--scrim)}
+.dlg-h{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1.5px solid var(--line);position:sticky;top:0;background:var(--paper)}
+.dlg-h h2{font-size:15px;letter-spacing:.1em;text-transform:uppercase;flex:1}
+.dlg-b{padding:14px 18px 18px;overflow-y:auto}
+.dlg-b h3{font-size:14px;letter-spacing:.06em;text-transform:uppercase;margin:16px 0 6px}
+.dlg-b p,.dlg-b li{font-size:14.5px;line-height:1.6;margin-bottom:7px}
+.dlg-b ul,.dlg-b ol{padding-left:22px;margin-bottom:8px}
+.dlg-b table{border-collapse:collapse;font-size:13px;width:100%}
+.dlg-b th,.dlg-b td{border:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top}
+.dlg-b th{background:var(--th-bg);font-size:11.5px;letter-spacing:.05em;text-transform:uppercase}
+.dlg-b td input{width:100%;min-width:60px;font:13px var(--font-mono);padding:2px 4px;border:1px solid var(--steel-edge);border-radius:2px;background:var(--field);color:var(--ink)}
+.dlg-b textarea{width:100%;font:12.5px var(--font-mono);padding:6px;border:1.5px solid var(--steel-edge);border-radius:3px;background:var(--field);color:var(--ink)}
+.teacher{margin-top:18px;padding:10px 12px;border:1.5px dashed var(--ink-soft);border-radius:3px}
+kbd{font:12px var(--font-mono);border:1px solid var(--steel-edge);border-bottom-width:2px;border-radius:3px;padding:1px 5px;background:var(--field)}
+
+/* ---------- Toast ---------- */
+.sh-toast{position:fixed;left:50%;bottom:54px;transform:translateX(-50%);background:var(--ink);color:var(--paper);font:14px var(--font-ui);padding:8px 16px;border-radius:4px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:80vw;z-index:60}
+.sh-toast.on{opacity:1}
+
+/* ---------- Footer (attribution block, identical across tools) ---------- */
+.sh-footer{flex:0 0 auto;display:flex;align-items:center;flex-wrap:wrap;gap:4px 16px;padding:6px 14px;border-top:1.5px solid var(--line);background:var(--panel);font-size:12px;color:var(--ink-soft)}
+.sh-footer .foot-by{color:var(--ink)}
+.sh-footer a{color:var(--ink-soft);text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--line)}
+.sh-footer a:hover{color:var(--dykem);text-decoration-color:var(--dykem)}
+.sh-footer .foot-by a{color:var(--ink)}
+.sh-footer .foot-spacer{flex:1}
+.sh-footer .foot-ai{width:100%;order:10}
+
+/* ---------- Accessibility ---------- */
+:focus-visible{outline:2px solid var(--dykem);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
+}
+
+/* ---------- Print report (always ink on paper) ---------- */
+#sh-report{display:none}
+@media print{
+  @page{size:letter;margin:12mm}
+  body>*:not(#sh-report){display:none !important}
+  body{overflow:visible;height:auto;display:block;background:#fff;color:#000}
+  #sh-report{display:block !important;font-family:var(--font-ui);color:#000;font-size:11.5px}
+  #sh-report .rb{border:2px solid #000;padding:12px 16px;margin-bottom:10px}
+  #sh-report h1{font-size:17px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px}
+  #sh-report h2{font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;margin:12px 0 4px;break-after:avoid}
+  #sh-report .sub{font-size:11px;letter-spacing:.06em;color:#444;margin-bottom:8px}
+  #sh-report table{width:100%;border-collapse:collapse;font-size:11px;margin:4px 0 8px;break-inside:auto}
+  #sh-report tr{break-inside:avoid}
+  #sh-report th,#sh-report td{border:1px solid #000;padding:3px 6px;text-align:left;vertical-align:top}
+  #sh-report th{background:#eee;font-size:10.5px;font-weight:700}
+  #sh-report tr.hd th{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase}
+  #sh-report .fig{border:1px solid #000;break-inside:avoid}
+  #sh-report .fig svg{width:100%;height:auto;display:block}
+  #sh-report .mono{font-family:var(--font-mono)}
+  #sh-report h3.wk-h{font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:8px 0 2px;padding:0}
+  #sh-report .sig{margin-top:18px;font-size:11px}
+  #sh-report .sig span{display:inline-block;border-top:1px solid #000;min-width:200px;padding-top:3px;margin-right:36px}
+}
+/* END vendor:shell.css */
+
+/* ---------- Conveyor Designer ---------- */
+.banner{border:1.5px solid var(--brass);background:var(--brass-soft);border-radius:3px;padding:7px 10px;font-size:13px;margin-bottom:8px}
+.banner[hidden]{display:none}
+.strip{font-size:13px;margin:8px 0;line-height:1.9}
+.strip .lbl{color:var(--ink-soft)}
+.strip .link{font:600 13px var(--font-ui);border:none;background:none;color:var(--dykem);cursor:pointer;padding:2px 3px;text-decoration:underline}
+details.step{border:1.5px solid var(--line);border-radius:3px;background:var(--field);margin:6px 0}
+details.step>summary{cursor:pointer;padding:7px 10px;font:700 13px var(--font-ui)}
+details.step>summary .num{display:inline-block;min-width:18px;text-align:center;background:var(--ink);color:var(--paper);border-radius:2px;margin-right:4px}
+details.step .stepb{padding:2px 12px 10px}
+.mplot svg{width:100%;max-width:330px;height:auto;display:block}
+.ok{color:var(--pass);font-weight:700}
+.bad{color:var(--fail);font-weight:700}
+.man{color:var(--ink-soft);font-weight:700}
+.small{font:400 11.5px var(--font-ui);color:var(--ink-soft)}
+table.reqed{width:100%;border-collapse:collapse;font-size:12.5px}
+table.reqed th{font:700 11px var(--font-ui);letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);text-align:left;padding:3px 4px;border-bottom:1.5px solid var(--line)}
+table.reqed td{padding:3px 4px;border-bottom:1px dotted var(--line);vertical-align:middle}
+table.reqed input,table.reqed select{font:12.5px var(--font-ui);border:1.5px solid var(--steel-edge);border-radius:3px;background:var(--field);color:var(--ink);padding:3px 4px;width:100%;min-width:0}
+table.reqed input.num{font-family:var(--font-mono);text-align:right;width:62px}
+table.reqed input[aria-invalid="true"]{border-color:var(--fail)}
+table.reqed td.val{font:12px var(--font-mono);white-space:nowrap}
+table.reqsum{width:100%;border-collapse:collapse;font-size:13px}
+table.reqsum th,table.reqsum td{border-bottom:1px dotted var(--line);padding:4px 5px;text-align:left}
+table.reqsum tr.hd th{font:700 11px var(--font-ui);letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft)}
+.reqside th{font-size:12.5px}
+#cdDraw{margin-bottom:6px}
+</style>
+</head>
+<body>
+<noscript>This tool needs JavaScript turned on.</noscript>
+<script>
+/* BEGIN vendor:prediction-log.js */
+// ecosystem/prediction-log.js v1.1.0
+// Prediction Log record format (spec 07 Part A). Pure functions, no DOM.
+// Every tool writes records through this module so the Collector can merge them.
+const PredictionLog = (function () {
+  'use strict';
+  const SCHEMA = 'prediction-log';
+  const SCHEMA_VERSION = 1;
+  const FIELDS = ['schema', 'schemaVersion', 'tool', 'toolVersion', 'student', 'team', 'classPeriod',
+    'problemId', 'quantity', 'unit', 'predicted', 'model', 'measured', 'pctPredVsModel',
+    'pctMeasVsModel', 'attempt', 'timestamp', 'inputs', 'note'];
+  const NUMERIC = ['predicted', 'model', 'measured', 'pctPredVsModel', 'pctMeasVsModel'];
+  const NEWER_WARNING = 'made by a newer tool version; some fields may be ignored';
+
+  const isNum = v => typeof v === 'number' && isFinite(v);
+
+  // (value − reference) ÷ reference × 100; null when either is missing or the reference is 0 (00 §3).
+  function pctDiff(value, reference) {
+    if (!isNum(value) || !isNum(reference) || reference === 0) return null;
+    return (value - reference) / reference * 100;
+  }
+
+  // ISO 8601 local time with offset, e.g. 2026-09-27T14:03:09-05:00.
+  function isoLocal(date) {
+    const d = date || new Date();
+    const p = n => String(Math.abs(Math.trunc(n))).padStart(2, '0');
+    const off = -d.getTimezoneOffset();
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' +
+      p(d.getMinutes()) + ':' + p(d.getSeconds()) + (off >= 0 ? '+' : '-') + p(off / 60) + ':' + p(off % 60);
+  }
+
+  // Short stable hash (FNV-1a, 32-bit) for sandbox problem IDs.
+  function shortHash(obj) {
+    const s = typeof obj === 'string' ? obj : stableStringify(obj);
+    let h = 0x811c9dc5;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return h.toString(16).padStart(8, '0').slice(0, 6);
+  }
+  function stableStringify(v) {
+    if (Array.isArray(v)) return '[' + v.map(stableStringify).join(',') + ']';
+    if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + stableStringify(v[k])).join(',') + '}';
+    return JSON.stringify(v);
+  }
+  const sandboxProblemId = inputs => 'sandbox-' + shortHash(inputs);
+
+  // Attempt number for the next record: one more than the highest so far for
+  // this student, problem and quantity.
+  function nextAttempt(records, student, problemId, quantity) {
+    let max = 0;
+    for (const r of records) {
+      if (r.student === student && r.problemId === problemId && r.quantity === quantity && r.attempt > max) max = r.attempt;
+    }
+    return max + 1;
+  }
+
+  function makeRecord(o) {
+    const model = isNum(o.model) ? o.model : null;
+    const measured = isNum(o.measured) ? o.measured : null;
+    const rec = {
+      schema: SCHEMA, schemaVersion: SCHEMA_VERSION,
+      tool: String(o.tool || ''), toolVersion: String(o.toolVersion || ''),
+      student: (o.student || '').trim() || 'unnamed',
+      team: o.team || '', classPeriod: o.classPeriod || '',
+      problemId: String(o.problemId || 'sandbox'),
+      quantity: String(o.quantity || ''), unit: o.unit == null ? '' : String(o.unit),
+      predicted: o.predicted, model, measured,
+      pctPredVsModel: pctDiff(o.predicted, model),
+      pctMeasVsModel: pctDiff(measured, model),
+      attempt: o.attempt || 1,
+      timestamp: o.timestamp || isoLocal(),
+      inputs: o.inputs || { values: {}, units: {} },
+      note: o.note || '',
+    };
+    return rec;
+  }
+
+  // Update measured value and/or note after the fact; keeps the derived percent in step.
+  function annotate(rec, { measured, note } = {}) {
+    const out = Object.assign({}, rec);
+    if (measured !== undefined) { out.measured = isNum(measured) ? measured : null; out.pctMeasVsModel = pctDiff(out.measured, out.model); }
+    if (note !== undefined) out.note = String(note);
+    return out;
+  }
+
+  // Record a measured value (and/or note) on the most recent record that matches
+  // student, problemId and quantity (and tool, when given). Returns the new list and
+  // the index changed, or index -1 when nothing matches. The list passed in is not changed.
+  function annotateLatest(records, match, fields) {
+    for (let i = records.length - 1; i >= 0; i--) {
+      const r = records[i];
+      if (r.student === match.student && r.problemId === match.problemId && r.quantity === match.quantity && (!match.tool || r.tool === match.tool)) {
+        const out = records.slice();
+        out[i] = annotate(r, fields);
+        return { records: out, index: i };
+      }
+    }
+    return { records, index: -1 };
+  }
+
+  /* ---------------------------------------------------------------- JSON */
+  function toJSON(records) {
+    return { schema: SCHEMA, schemaVersion: SCHEMA_VERSION, records: records.map(r => Object.assign({}, r)) };
+  }
+
+  /* ---------------------------------------------------------------- CSV (RFC 4180) */
+  function csvCell(v) {
+    if (v === null || v === undefined) return '';
+    const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function toCSV(records) {
+    const lines = [FIELDS.join(',')];
+    for (const r of records) lines.push(FIELDS.map(f => csvCell(r[f])).join(','));
+    return '﻿' + lines.join('\r\n') + '\r\n';
+  }
+  function parseCSVRows(text) {
+    const rows = []; let row = [], cell = '', i = 0, q = false;
+    if (text.charCodeAt(0) === 0xFEFF) i = 1;
+    for (; i < text.length; i++) {
+      const c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+        else cell += c;
+      } else if (c === '"') q = true;
+      else if (c === ',') { row.push(cell); cell = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(cell); rows.push(row); row = []; cell = '';
+      } else cell += c;
+    }
+    if (q) throw new Error('a quoted cell is not closed');
+    if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+    return rows.filter(r => !(r.length === 1 && r[0] === ''));
+  }
+  function fromCSV(text) {
+    const rows = parseCSVRows(text);
+    if (!rows.length) throw new Error('the file is empty');
+    const head = rows[0].map(h => h.trim());
+    for (const need of ['student', 'problemId', 'quantity', 'predicted']) {
+      if (head.indexOf(need) < 0) throw new Error('the header row has no "' + need + '" column');
+    }
+    const warnings = [];
+    const records = rows.slice(1).map(cells => {
+      const o = {};
+      head.forEach((h, k) => { o[h] = cells[k] === undefined ? '' : cells[k]; });
+      return normalize(o, warnings);
+    });
+    return { records, warnings: dedupeStrings(warnings) };
+  }
+
+  /* ---------------------------------------------------------------- normalize (either file form) */
+  function toNumOrNull(v) {
+    if (v === null || v === undefined || v === '') return null;
+    const n = typeof v === 'number' ? v : Number(String(v).replace(/,/g, ''));
+    return isFinite(n) ? n : null;
+  }
+  function normalize(o, warnings) {
+    const ver = toNumOrNull(o.schemaVersion);
+    if (ver !== null && ver > SCHEMA_VERSION) warnings.push(NEWER_WARNING);
+    const r = {};
+    r.schema = SCHEMA; r.schemaVersion = SCHEMA_VERSION;
+    for (const f of ['tool', 'toolVersion', 'student', 'team', 'classPeriod', 'problemId', 'quantity', 'unit', 'timestamp', 'note']) {
+      r[f] = o[f] == null ? '' : String(o[f]);
+    }
+    if (!r.student) r.student = 'unnamed';
+    for (const f of NUMERIC) r[f] = toNumOrNull(o[f]);
+    r.attempt = Math.max(1, Math.round(toNumOrNull(o.attempt) || 1));
+    let inputs = o.inputs;
+    if (typeof inputs === 'string') { try { inputs = inputs ? JSON.parse(inputs) : {}; } catch (e) { inputs = {}; warnings.push('some input snapshots could not be read'); } }
+    r.inputs = inputs && typeof inputs === 'object' ? inputs : {};
+    // Derived fields are recomputed so a hand-edited spreadsheet stays consistent.
+    r.pctPredVsModel = pctDiff(r.predicted, r.model);
+    r.pctMeasVsModel = pctDiff(r.measured, r.model);
+    return r;
+  }
+  function fromJSON(text) {
+    let data;
+    try { data = typeof text === 'string' ? JSON.parse(text) : text; }
+    catch (e) { throw new Error('this is not valid JSON (' + e.message + ')'); }
+    const warnings = [];
+    let list;
+    if (Array.isArray(data)) list = data;
+    else if (data && Array.isArray(data.records)) {
+      if (data.schema && data.schema !== SCHEMA) throw new Error('this is a "' + data.schema + '" file, not a prediction log');
+      if (toNumOrNull(data.schemaVersion) > SCHEMA_VERSION) warnings.push(NEWER_WARNING);
+      list = data.records;
+    } else throw new Error('no "records" list was found');
+    return { records: list.map(o => normalize(o || {}, warnings)), warnings: dedupeStrings(warnings) };
+  }
+  // Pick the reader from the file name or content.
+  function parseFile(name, text) {
+    const t = String(text).replace(/^﻿/, '').trimStart();
+    if (/\.json$/i.test(name) || t[0] === '{' || t[0] === '[') return fromJSON(t);
+    return fromCSV(String(text));
+  }
+
+  const dupKey = r => [r.student, r.tool, r.problemId, r.quantity, r.attempt, r.timestamp].join('\u0001');
+  function dedupe(records) {
+    const seen = new Set(), out = [];
+    for (const r of records) { const k = dupKey(r); if (!seen.has(k)) { seen.add(k); out.push(r); } }
+    return { records: out, removed: records.length - out.length };
+  }
+
+  // One tab-separated line (no header) for pasting into a shared spreadsheet.
+  function toTSVRow(r) {
+    return FIELDS.map(f => {
+      const v = r[f];
+      if (v === null || v === undefined) return '';
+      return (typeof v === 'object' ? JSON.stringify(v) : String(v)).replace(/[\t\r\n]+/g, ' ');
+    }).join('\t');
+  }
+
+  function dedupeStrings(a) { return a.filter((s, i) => a.indexOf(s) === i); }
+
+  return {
+    SCHEMA, SCHEMA_VERSION, FIELDS, NEWER_WARNING,
+    pctDiff, isoLocal, shortHash, stableStringify, sandboxProblemId, nextAttempt,
+    makeRecord, annotate, annotateLatest, toJSON, toCSV, fromCSV, fromJSON, parseFile, parseCSVRows, dedupe, toTSVRow,
+  };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = PredictionLog;
+/* END vendor:prediction-log.js */
+/* BEGIN vendor:schemas.js */
+// ecosystem/schemas.js v1.0.0
+// Validators and builders for the files the tools exchange (see ecosystem/schemas.md).
+// Each reader returns { value, warnings } or throws an Error whose message is written
+// for students ("This file ..."). Pure functions, no DOM.
+const Schemas = (function () {
+  'use strict';
+  const isNum = v => typeof v === 'number' && isFinite(v);
+  const fail = msg => { throw new Error(msg); };
+
+  function parse(text) {
+    if (text && typeof text === 'object') return text;
+    try { return JSON.parse(String(text).replace(/^﻿/, '')); }
+    catch (e) { fail('This file is not valid JSON, so it could not be read.'); }
+  }
+  function header(obj, schema, current, warnings) {
+    if (!obj || typeof obj !== 'object') fail('This file is empty or not a JSON object.');
+    if (obj.schema !== schema) fail('This is not a ' + schema + ' file' + (obj.schema ? ' (it says "' + obj.schema + '").' : '.'));
+    const v = Number(obj.schemaVersion);
+    if (!isFinite(v) || v < 1) fail('This file has no schema version, so it could not be read.');
+    if (v > current) warnings.push('This file was made by a newer tool version; some fields may be ignored.');
+  }
+  // Angle difference in degrees, 0..180.
+  function angleGap(a, b) { const d = Math.abs(((a - b) % 360 + 540) % 360 - 180); return d; }
+
+  /* ------------------------------------------------------------ shaft-loads (spec 01 §7) */
+  const SHAFT_LOADS_VERSION = 1;
+  function readShaftLoads(text) {
+    const obj = parse(text), warnings = [];
+    header(obj, 'shaft-loads', SHAFT_LOADS_VERSION, warnings);
+    if (!Array.isArray(obj.loads) || obj.loads.length === 0) fail('This shaft-loads file has no loads in it.');
+    const units = obj.units || {};
+    if (units.force && units.force !== 'N') fail('Forces in this file are in ' + units.force + '. Only N is supported.');
+    if (units.torque && units.torque !== 'N·m' && units.torque !== 'N*m' && units.torque !== 'N m') fail('Torques in this file are in ' + units.torque + '. Only N·m is supported.');
+    const loads = obj.loads.map((l, i) => {
+      const n = i + 1;
+      if (!l || typeof l !== 'object') fail('Load ' + n + ' is not readable.');
+      const magnitude = Number(l.magnitude);
+      if (!isFinite(magnitude)) fail('Load ' + n + ' has no magnitude.');
+      if (magnitude < 0) fail('Load ' + n + ' has a negative magnitude. Magnitudes must be positive; the direction goes in angleDeg.');
+      const angleDeg = l.angleDeg == null ? 270 : Number(l.angleDeg);
+      if (!isFinite(angleDeg)) fail('Load ' + n + ' has an angle that is not a number.');
+      const torque = l.torque == null ? null : Number(l.torque);
+      if (torque !== null && !isFinite(torque)) fail('Load ' + n + ' has a torque that is not a number.');
+      return {
+        label: String(l.label || ('Load ' + n)).slice(0, 20), magnitude, angleDeg, torque,
+        plane: l.plane || null, shaft: l.shaft == null ? null : String(l.shaft),
+      };
+    });
+    const angles = loads.map(l => l.angleDeg);
+    let spread = 0;
+    // Spec 01 §5.5: warn when any two loads point more than 5° apart. Version 1
+    // places every imported load by its magnitude, so even opposed loads need a look.
+    for (let i = 0; i < angles.length; i++) for (let j = i + 1; j < angles.length; j++) {
+      spread = Math.max(spread, angleGap(angles[i], angles[j]));
+    }
+    return {
+      value: { source: String(obj.source || 'unknown tool'), loads, notes: Array.isArray(obj.notes) ? obj.notes.map(String) : [] },
+      warnings, planeSpreadDeg: spread, multiPlane: spread > 5,
+    };
+  }
+  function makeShaftLoads(source, loads, notes) {
+    return {
+      schema: 'shaft-loads', schemaVersion: SHAFT_LOADS_VERSION, source,
+      units: { force: 'N', torque: 'N·m' },
+      loads: loads.map(l => {
+        const o = { label: l.label, magnitude: l.magnitude, angleDeg: l.angleDeg };
+        if (isNum(l.torque)) o.torque = l.torque;
+        if (l.plane) o.plane = l.plane;
+        if (l.shaft != null) o.shaft = l.shaft;
+        return o;
+      }),
+      notes: notes || [],
+    };
+  }
+
+  /* ------------------------------------------------------------ drive-request / drive-result (spec 02 §5.5) */
+  const DRIVE_VERSION = 1;
+  function readStages(list, where) {
+    if (list == null) return null;
+    if (!Array.isArray(list) || !list.length) fail(where + ' has an empty stage list.');
+    return list.map((s, i) => {
+      const ratio = Number(s.ratio), efficiency = s.efficiency == null ? 1 : Number(s.efficiency);
+      if (!(ratio > 0)) fail('Stage ' + (i + 1) + ' in ' + where + ' needs a ratio greater than 0.');
+      if (!(efficiency > 0 && efficiency <= 1)) fail('Stage ' + (i + 1) + ' in ' + where + ' needs an efficiency between 0 and 1.');
+      return { ratio, efficiency };
+    });
+  }
+  function readDriveRequest(text) {
+    const obj = parse(text), warnings = [];
+    header(obj, 'drive-request', DRIVE_VERSION, warnings);
+    const loadTorque = Number(obj.loadTorque);
+    if (!isFinite(loadTorque) || loadTorque < 0) fail('This drive request needs a load torque of 0 N·m or more.');
+    const targetSpeed = obj.targetSpeed == null ? null : Number(obj.targetSpeed);
+    if (targetSpeed !== null && !(targetSpeed > 0)) fail('The target speed in this drive request must be greater than 0 rpm.');
+    let motor = null;
+    if (obj.motor) {
+      const m = obj.motor;
+      motor = { label: String(m.label || ''), stallTorque: Number(m.stallTorque), noLoadSpeed: Number(m.noLoadSpeed), count: m.count == null ? 1 : Number(m.count) };
+      if (!(motor.stallTorque > 0) || !(motor.noLoadSpeed > 0)) fail('The motor in this drive request needs a stall torque and no-load speed greater than 0.');
+    }
+    return { value: { source: String(obj.source || 'unknown tool'), loadTorque, targetSpeed, stages: readStages(obj.stages, 'this drive request'), motor, note: obj.note ? String(obj.note) : '' }, warnings };
+  }
+  function makeDriveRequest(source, o) {
+    const r = { schema: 'drive-request', schemaVersion: DRIVE_VERSION, source, units: { torque: 'N·m', speed: 'rpm' }, loadTorque: o.loadTorque };
+    if (isNum(o.targetSpeed)) r.targetSpeed = o.targetSpeed;
+    if (o.stages) r.stages = o.stages.map(s => ({ ratio: s.ratio, efficiency: s.efficiency }));
+    if (o.motor) r.motor = Object.assign({}, o.motor);
+    if (o.note) r.note = o.note;
+    return r;
+  }
+  function makeDriveResult(source, o) {
+    return {
+      schema: 'drive-result', schemaVersion: DRIVE_VERSION, source, units: { torque: 'N·m', speed: 'rpm', power: 'W' },
+      motor: Object.assign({}, o.motor),
+      stages: (o.stages || []).map(s => ({ ratio: s.ratio, efficiency: s.efficiency })),
+      ratio: o.ratio, efficiency: o.efficiency,
+      loadTorque: o.loadTorque, targetSpeed: isNum(o.targetSpeed) ? o.targetSpeed : null,
+      ratioRoots: o.ratioRoots || null,
+      operatingPoint: Object.assign({}, o.operatingPoint),
+      dutyBand: o.dutyBand,
+    };
+  }
+  function readDriveResult(text) {
+    const obj = parse(text), warnings = [];
+    header(obj, 'drive-result', DRIVE_VERSION, warnings);
+    if (!(Number(obj.ratio) > 0)) fail('This drive result has no gear ratio.');
+    if (!obj.operatingPoint || typeof obj.operatingPoint !== 'object') fail('This drive result has no operating point.');
+    return { value: obj, warnings };
+  }
+
+  /* ------------------------------------------------------------ design file envelope (00 §6) */
+  function makeDesignFile(meta, state) {
+    return { tool: meta.tool, toolVersion: meta.toolVersion, schemaVersion: meta.schemaVersion, savedAt: new Date().toISOString(), state };
+  }
+  // opts: { tool, schemaVersion, migrate(fromVersion, state) -> { state, dropped: [..] } }
+  function readDesignFile(text, opts) {
+    const obj = parse(text), warnings = [];
+    if (!obj || typeof obj !== 'object' || !('state' in obj)) {
+      if (obj && obj.schema) fail('This is a ' + obj.schema + ' file, not a saved design. Use the import menu for it.');
+      fail('This is not a saved design file.');
+    }
+    if (obj.tool && opts.tool && obj.tool !== opts.tool) fail('This design was saved from the ' + obj.tool + ', not the ' + opts.tool + '.');
+    const v = Number(obj.schemaVersion) || 1;
+    let state = obj.state;
+    if (v > opts.schemaVersion) warnings.push('This design was saved by a newer version of the tool. Anything this version does not know about was left out.');
+    else if (v < opts.schemaVersion && opts.migrate) {
+      const m = opts.migrate(v, state);
+      state = m.state;
+      if (m.dropped && m.dropped.length) warnings.push('Could not load from the older file: ' + m.dropped.join(', ') + '.');
+    }
+    return { value: { state, savedAt: obj.savedAt || null, toolVersion: obj.toolVersion || '' }, warnings };
+  }
+
+  // Detect which kind of file this is, for tools that accept several on one Load button.
+  function kindOf(text) {
+    let obj; try { obj = parse(text); } catch (e) { return null; }
+    if (obj && obj.schema) return obj.schema;
+    if (obj && 'state' in obj) return 'design';
+    return null;
+  }
+
+  return {
+    SHAFT_LOADS_VERSION, DRIVE_VERSION, angleGap,
+    readShaftLoads, makeShaftLoads, readDriveRequest, makeDriveRequest, readDriveResult, makeDriveResult,
+    makeDesignFile, readDesignFile, kindOf,
+  };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = Schemas;
+/* END vendor:schemas.js */
+/* BEGIN vendor:beam-core.js */
+// ecosystem/beam-core.js v1.0.0
+// Beam and shaft model from spec 01 §3: reactions, shear, bending moment,
+// torque segment, bending and torsional stress in a solid round shaft,
+// Tresca and von Mises safety factors, required diameter, and deflection by
+// double numerical integration. Plain SI in and out (N, m, N·m, Pa); no DOM.
+// Positions x are measured from support A (pin) along the shaft; support B
+// (roller) is at x = L. Loads P are positive downward. Moments are sagging
+// positive. Shared by the Shaft and Beam Workbench, the Conveyor Designer and
+// the Truss Stress Visualizer's Beam mode.
+const BeamCore = (function () {
+  'use strict';
+  const PI = Math.PI;
+  const isNum = v => typeof v === 'number' && isFinite(v);
+
+  /* ------------------------------------------------------------ statics (§3.1) */
+  // Moments about A: R_B = Σ(P·a)/L; vertical balance: R_A = ΣP − R_B. Holds for overhangs.
+  function reactions(L, loads) {
+    let sumP = 0, sumPa = 0;
+    for (const l of loads) { sumP += l.P; sumPa += l.P * l.a; }
+    const RB = sumPa / L;
+    return { RA: sumP - RB, RB, sumP, sumPa };
+  }
+
+  /* ------------------------------------------------------------ shear and moment (§3.2) */
+  // V(x): sum of vertical forces to the left of x (reactions up +, loads down −).
+  // side = 'left' gives the value just left of x, 'right' just right of it.
+  function shearAt(x, L, loads, R, side) {
+    const right = side !== 'left';
+    const past = (s) => right ? s <= x : s < x;
+    let V = 0;
+    if (past(0)) V += R.RA;
+    if (past(L)) V += R.RB;
+    for (const l of loads) if (past(l.a)) V -= l.P;
+    return V;
+  }
+  // M(x): moments about x of the forces to the left of x. Continuous, so no side.
+  function momentAt(x, L, loads, R) {
+    let M = 0;
+    if (x > 0) M += R.RA * x;
+    if (x > L) M += R.RB * (x - L);
+    for (const l of loads) if (l.a < x) M -= l.P * (x - l.a);
+    return M;
+  }
+  function torqueAt(x, tq) {
+    if (!tq || !isNum(tq.T) || tq.T === 0) return 0;
+    const lo = Math.min(tq.from, tq.to), hi = Math.max(tq.from, tq.to);
+    const eps = 1e-12;
+    return (x >= lo - eps && x <= hi + eps) ? tq.T : 0;   // closed interval (ERRATA: SB-12)
+  }
+
+  /* ------------------------------------------------------------ section stresses (§3.4) */
+  // Stresses at one section of a solid round shaft. M, T in N·m, d in m, Sy in Pa.
+  function section(o) {
+    const d = o.d, Kb = o.Kb || 1, Kt = o.Kt || 1, M = Math.abs(o.M || 0), T = Math.abs(o.T || 0);
+    const k = PI * d * d * d;
+    const sigma = 32 * Kb * M / k;
+    const tau = 16 * Kt * T / k;
+    const tauMax = 16 / k * Math.hypot(Kb * M, Kt * T);          // Tresca combined
+    const sigmaVM = Math.sqrt(sigma * sigma + 3 * tau * tau);      // von Mises
+    const rule = o.rule === 'vonMises' ? 'vonMises' : 'tresca';
+    let n = null;
+    if (isNum(o.Sy)) {
+      if (rule === 'tresca') n = tauMax > 0 ? o.Sy / (2 * tauMax) : Infinity;
+      else n = sigmaVM > 0 ? o.Sy / sigmaVM : Infinity;
+    }
+    const out = { sigma, tau, tauMax, sigmaVM, n, rule };
+    if (isNum(o.nTarget) && isNum(o.Sy)) out.dReq = requiredDiameter({ M, T, Sy: o.Sy, n: o.nTarget, Kb, Kt, rule });
+    return out;
+  }
+  // Required diameter for a target safety factor (§3.4). Returns null when there is no load.
+  function requiredDiameter(o) {
+    const Kb = o.Kb || 1, Kt = o.Kt || 1, M = Math.abs(o.M), T = Math.abs(o.T);
+    if (o.rule === 'vonMises') {
+      const c = Math.sqrt((Kb * M) ** 2 + 0.75 * (Kt * T) ** 2);
+      return c > 0 ? Math.cbrt((32 * o.n / (PI * o.Sy)) * c) : null;
+    }
+    const c = Math.hypot(Kb * M, Kt * T);
+    return c > 0 ? Math.cbrt(16 * c / (PI * o.Sy / (2 * o.n))) : null;
+  }
+
+  /* ------------------------------------------------------------ whole-shaft analysis */
+  // inp: { L, overhangLeft, overhangRight, loads: [{P, a, label}], mode: 'beam'|'shaft',
+  //        torque: {T, from, to} | null, d, Sy, E, Kb, Kt, nTarget, rule, stations }
+  function analyze(inp) {
+    const L = inp.L, oL = inp.overhangLeft || 0, oR = inp.overhangRight || 0;
+    const x0 = -oL, x1 = L + oR;
+    const loads = (inp.loads || []).filter(l => isNum(l.P) && isNum(l.a));
+    const shaft = inp.mode !== 'beam';
+    const tq = shaft && inp.torque && isNum(inp.torque.T) ? inp.torque : null;
+    const R = reactions(L, loads);
+
+    // Stations: ≥400 evenly spaced over the modeled length, plus every load, support and torque end.
+    const nSt = Math.max(400, inp.stations || 400);
+    const special = [x0, 0, L, x1].concat(loads.map(l => l.a));
+    if (tq) special.push(tq.from, tq.to);
+    const set = new Set();
+    for (let i = 0; i <= nSt; i++) set.add(round12(x0 + (x1 - x0) * i / nSt));
+    special.forEach(s => { if (s >= x0 - 1e-12 && s <= x1 + 1e-12) set.add(round12(s)); });
+    const xs = Array.from(set).sort((a, b) => a - b);
+    const jumps = new Set([0, L].concat(loads.map(l => l.a)).map(round12));
+
+    const V = [], M = [], T = [];
+    for (const x of xs) { V.push(shearAt(x, L, loads, R, 'right')); M.push(momentAt(x, L, loads, R)); T.push(tq ? torqueAt(x, tq) : 0); }
+
+    // Shear diagram polyline with both sides at each jump (for drawing and labels).
+    const shearPts = [];
+    xs.forEach((x, i) => {
+      if (jumps.has(x) && x > x0 && x < x1) shearPts.push({ x, V: shearAt(x, L, loads, R, 'left') });
+      shearPts.push({ x, V: V[i] });
+    });
+
+    // |M|max and its station.
+    let iM = 0;
+    for (let i = 1; i < xs.length; i++) if (Math.abs(M[i]) > Math.abs(M[iM]) + 1e-12) iM = i;
+    const Mmax = { M: M[iM], x: xs[iM] };
+
+    // Stress, safety factor and required diameter at every station (§3.4: scan all stations).
+    const rule = inp.rule === 'vonMises' ? 'vonMises' : 'tresca';
+    const haveMat = isNum(inp.d) && inp.d > 0 && isNum(inp.Sy) && inp.Sy > 0;
+    const nArr = [];
+    let crit = null, dReq = null, dReqX = null;
+    if (haveMat) {
+      xs.forEach((x, i) => {
+        const s = section({ M: M[i], T: T[i], d: inp.d, Sy: inp.Sy, Kb: inp.Kb, Kt: inp.Kt, rule });
+        nArr.push(s.n);
+        if (crit === null || s.n < crit.n - 1e-12) crit = Object.assign({ x, i, M: M[i], T: T[i] }, s);
+        if (isNum(inp.nTarget) && inp.nTarget > 0) {
+          const dr = requiredDiameter({ M: M[i], T: T[i], Sy: inp.Sy, n: inp.nTarget, Kb: inp.Kb, Kt: inp.Kt, rule });
+          if (dr !== null && (dReq === null || dr > dReq + 1e-15)) { dReq = dr; dReqX = x; }
+        }
+      });
+    }
+    const loaded = crit !== null && isFinite(crit.n);
+    const result = {
+      L, x0, x1, R, RA: R.RA, RB: R.RB, xs, V, M, T, shearPts, Mmax, nArr, rule, mode: shaft ? 'shaft' : 'beam',
+      torque: tq ? Math.abs(tq.T) : 0,
+      critical: loaded ? crit : null,
+      n: loaded ? crit.n : null,
+      nReason: !haveMat ? 'enter a diameter and yield strength' : loaded ? null : 'no load',
+      pass: loaded && isNum(inp.nTarget) ? crit.n >= inp.nTarget : null,
+      dReq, dReqX,
+    };
+    if (isNum(inp.E) && inp.E > 0 && isNum(inp.d) && inp.d > 0) result.deflection = deflection(inp, loads, R);
+    return result;
+  }
+
+  /* ------------------------------------------------------------ deflection (§3.5) */
+  // y'' = M/(E I), integrated twice on a fine grid, with y = 0 at both supports.
+  // Negative y is downward. I = π d⁴ / 64.
+  function deflection(inp, loads, R) {
+    const L = inp.L, x0 = -(inp.overhangLeft || 0), x1 = L + (inp.overhangRight || 0);
+    const I = PI * Math.pow(inp.d, 4) / 64, EI = inp.E * I;
+    const knots = Array.from(new Set([x0, 0, L, x1].concat(loads.map(l => l.a)).map(round12))).filter(x => x >= x0 && x <= x1).sort((a, b) => a - b);
+    const xs = [x0];
+    const per = 4000 / Math.max(1e-9, x1 - x0);
+    for (let k = 1; k < knots.length; k++) {
+      const a = knots[k - 1], b = knots[k], n = Math.max(2, Math.ceil((b - a) * per));
+      for (let j = 1; j <= n; j++) xs.push(j === n ? b : a + (b - a) * j / n);
+    }
+    const curv = xs.map(x => momentAt(x, L, loads, R) / EI);
+    const slope = [0], Y = [0];
+    for (let i = 1; i < xs.length; i++) {
+      const h = xs[i] - xs[i - 1];
+      slope.push(slope[i - 1] + 0.5 * h * (curv[i] + curv[i - 1]));
+      // Exact for a linear curvature over the step (M is piecewise linear between loads).
+      Y.push(Y[i - 1] + h * slope[i - 1] + h * h * (2 * curv[i - 1] + curv[i]) / 6);
+    }
+    const at = x => { const i = xs.indexOf(x); return Y[i]; };
+    const yA = at(0), yB = at(round12(L));
+    // Add the straight line that brings y back to 0 at A (x = 0) and B (x = L).
+    const c1 = (yB - yA) / L, c0 = -yA;
+    const y = xs.map((x, i) => Y[i] + c0 - c1 * x);
+    let k = 0;
+    for (let i = 1; i < y.length; i++) if (Math.abs(y[i]) > Math.abs(y[k])) k = i;
+    return { xs, y, I, EI, max: Math.abs(y[k]), maxSigned: y[k], x: xs[k] };
+  }
+
+  function round12(x) { return Math.round(x * 1e12) / 1e12; }
+
+  // Closed form for a single centered load (Optimal Beam), for help and tests.
+  const centeredDeflection = (P, L, E, I) => P * L * L * L / (48 * E * I);
+
+  return { reactions, shearAt, momentAt, torqueAt, section, requiredDiameter, analyze, deflection, centeredDeflection };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = BeamCore;
+/* END vendor:beam-core.js */
+/* BEGIN vendor:motor-core.js */
+// ecosystem/motor-core.js v1.0.0
+// Permanent-magnet brushed DC motor at constant voltage (spec 02 §3): the
+// straight-line torque-speed model, parallel motors, gear stages, load types,
+// the operating point, the ratio solver, duty bands, and current and
+// efficiency. Plain SI in and out (N·m, rad/s, W, A, V); no DOM. Shared by the
+// Motor and Drive Matcher, the Conveyor Designer and the Gear Train Workbench.
+const MotorCore = (function () {
+  'use strict';
+  const G = 9.81;                      // m/s², as the unit plan uses for physics
+  const isNum = v => typeof v === 'number' && isFinite(v);
+  const DEFAULT_BANDS = { continuous: 30, short: 60 };   // % of stall (ISL Products)
+
+  // k identical motors on one gearbox input: stall torque k·Ts, same no-load speed (§3.1).
+  function motor(o) {
+    const k = o.k || 1, Ts = k * o.Ts, w0 = o.w0;
+    return { k, Ts, w0, Pmax: Ts * w0 / 4, TatPmax: Ts / 2, wAtPmax: w0 / 2 };
+  }
+  // Motor torque available at speed w on the line T = Ts(1 − w/w0).
+  const torqueAt = (m, w) => m.Ts * (1 - w / m.w0);
+  const speedAt = (m, T) => m.w0 * (1 - T / m.Ts);
+  const powerAt = (m, T) => T * speedAt(m, T);
+
+  // Overall ratio and efficiency: products over the stages (§3.2).
+  function gearing(stages) {
+    let i = 1, eta = 1;
+    for (const s of stages) { i *= s.ratio; eta *= (s.efficiency == null ? 1 : s.efficiency); }
+    return { i, eta };
+  }
+
+  // Load torque at the output (§3.2). r in m, F in N, m in kg.
+  function loadTorque(o) {
+    if (o.type === 'force') return o.F * o.r;
+    if (o.type === 'lift') return o.m * G * o.r;
+    return o.T;
+  }
+
+  function dutyBand(pct, bands) {
+    const b = bands || DEFAULT_BANDS;
+    if (!isNum(pct)) return null;
+    if (pct >= 100) return 'stalled';
+    return pct <= b.continuous ? 'continuous' : pct <= b.short ? 'short' : 'avoid';
+  }
+
+  // Operating point (§3.2). o: { Ts, w0, k, i, eta, TL, r (optional, for linear speed), bands }
+  function operate(o) {
+    const m = motor(o);
+    const Tm = o.TL / (o.i * o.eta);
+    const pct = Tm / m.Ts * 100;
+    const stalled = Tm >= m.Ts;
+    const wm = stalled ? 0 : speedAt(m, Tm);
+    const wout = wm / o.i;
+    const res = {
+      motor: m, Tm, pct, stalled, wm, wout,
+      Pout: o.TL * wout, Pmech: Tm * wm,
+      band: stalled ? 'stalled' : dutyBand(pct, o.bands),
+    };
+    if (isNum(o.r)) res.v = wout * o.r;
+    return res;
+  }
+
+  // Ratio for a target output speed under load (§3.3):
+  //   w_out·i² − w0·i + w0·T_L/(η·Ts) = 0
+  // Returns both roots; i_high keeps the motor below half its stall torque.
+  function solveRatio(o) {
+    const m = motor(o);
+    const a = o.wTarget, b = -m.w0, c = m.w0 * o.TL / (o.eta * m.Ts);
+    const D = b * b - 4 * a * c;
+    const out = { a, b, c, D, feasible: D >= 0, iHigh: null, iLow: null };
+    if (D < 0 || !(a > 0)) return out;
+    const sq = Math.sqrt(D);
+    out.iHigh = (m.w0 + sq) / (2 * a);
+    out.iLow = (m.w0 - sq) / (2 * a);
+    if (!(out.iLow > 1e-12)) out.iLow = null;           // T_L = 0 gives a zero root: not a ratio
+    out.pctHigh = o.TL / (out.iHigh * o.eta) / m.Ts * 100;
+    out.pctLow = out.iLow ? o.TL / (out.iLow * o.eta) / m.Ts * 100 : null;
+    return out;
+  }
+
+  // Current and efficiency (§3.5). Per-motor current rises linearly with that motor's torque;
+  // with k motors each carries T_m/k. Torque constant k_t = Ts/(Is − I0) for one motor.
+  function electrical(o) {
+    const k = o.k || 1;
+    const perT = o.Tm / k;
+    const Iper = o.I0 + (o.Is - o.I0) * perT / o.Ts;
+    const I = k * Iper;
+    const Pin = o.V * I;
+    const Pmech = o.Tm * o.wm;
+    return { I, Iper, Pin, Pmech, eff: Pin > 0 ? Pmech / Pin : null, kt: o.Ts / (o.Is - o.I0) };
+  }
+
+  // Nearest two-gear pair (whole teeth) to a ratio, for rounding a recommendation.
+  function nearestPair(ratio, zMin, zMax) {
+    zMin = zMin || 10; zMax = zMax || 100;
+    let best = null;
+    for (let z1 = zMin; z1 <= zMax; z1++) {
+      const z2 = Math.round(ratio * z1);
+      if (z2 < zMin || z2 > zMax) continue;
+      const err = Math.abs(z2 / z1 - ratio);
+      if (!best || err < best.err - 1e-12) best = { z1, z2, ratio: z2 / z1, err };
+    }
+    return best;
+  }
+
+  const rpmToRad = n => n * 2 * Math.PI / 60;
+  const radToRpm = w => w * 60 / (2 * Math.PI);
+
+  return { G, DEFAULT_BANDS, motor, torqueAt, speedAt, powerAt, gearing, loadTorque, dutyBand, operate, solveRatio, electrical, nearestPair, rpmToRad, radToRpm };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = MotorCore;
+/* END vendor:motor-core.js */
+/* BEGIN vendor:plot.js */
+// ecosystem/plot.js v1.0.0
+// Small SVG chart helpers for the tools: nice tick steps, linear scales, axes with
+// a grid, points, lines and reference lines. Every helper returns an SVG string, so
+// charts can be built and tested in Node. Colours come from the caller's palette
+// (app.pal()), so charts follow the theme and print ink on paper. Every ID is
+// prefixed with the caller's `idp`, because the report embeds a second copy of each
+// drawing (the clipPath lesson from the Shaft and Beam Workbench).
+const Plot = (function () {
+  'use strict';
+  const isNum = v => typeof v === 'number' && isFinite(v);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const r2 = v => Math.round(v * 100) / 100;              // SVG coordinates to 0.01 px
+
+  // A 1, 2 or 5 × 10ⁿ step that gives about `count` intervals over `span`.
+  function niceStep(span, count) {
+    count = count || 5;
+    if (!(span > 0) || !isNum(span)) return 1;
+    const raw = span / count, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+    return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+  }
+
+  // Widen [lo, hi] to whole steps and list the ticks. Handles lo = hi and reversed input.
+  // opts: { count, includeZero }
+  function niceDomain(lo, hi, opts) {
+    opts = opts || {};
+    if (!isNum(lo) || !isNum(hi)) { lo = 0; hi = 1; }
+    if (lo > hi) [lo, hi] = [hi, lo];
+    if (opts.includeZero) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+    if (lo === hi) { const d = lo === 0 ? 1 : Math.abs(lo) * 0.1; lo -= d; hi += d; }
+    const step = niceStep(hi - lo, opts.count);
+    const min = Math.floor(lo / step + 1e-9) * step, max = Math.ceil(hi / step - 1e-9) * step;
+    const ticks = [];
+    for (let i = 0, v = min; v <= max + step * 1e-6 && i < 1000; i++, v = min + i * step) ticks.push(Math.abs(v) < step * 1e-9 ? 0 : v);
+    return { min, max, step, ticks };
+  }
+
+  // Linear map from data [d0, d1] to pixels [p0, p1], with .invert.
+  function scale(d0, d1, p0, p1) {
+    const k = d1 === d0 ? 0 : (p1 - p0) / (d1 - d0);
+    const f = v => p0 + (v - d0) * k;
+    f.invert = p => k === 0 ? d0 : d0 + (p - p0) / k;
+    f.domain = [d0, d1]; f.range = [p0, p1];
+    return f;
+  }
+
+  // Tick label with just enough decimals for the step, a true minus sign and no "-0".
+  function fmtTick(v, step) {
+    const dec = Math.max(0, Math.min(10, -Math.floor(Math.log10(step) + 1e-9)));
+    let s = (Math.abs(v) < step * 1e-9 ? 0 : v).toFixed(dec);
+    if (/^-0(\.0+)?$/.test(s)) s = s.slice(1);
+    return s.replace(/^-/, '−');
+  }
+
+  // A plot frame: the plotting box, both scales and the axes, grid, tick labels and
+  // axis titles. o: { width, height, margin: {l, r, t, b}, x: [lo, hi], y: [lo, hi],
+  // xLabel, yLabel, pal, idp, xCount, yCount, includeZeroY, grid (default true), font }
+  function frame(o) {
+    const m = Object.assign({ l: 52, r: 14, t: 12, b: 40 }, o.margin || {});
+    const W = o.width, H = o.height, p = o.pal || {};
+    const ink = p.ink || '#23272C', soft = p.inkSoft || '#555', line = p.line || '#bbb', font = o.font || p.fontUi || 'sans-serif';
+    const xd = niceDomain(o.x[0], o.x[1], { count: o.xCount || 6, includeZero: o.includeZeroX });
+    const yd = niceDomain(o.y[0], o.y[1], { count: o.yCount || 5, includeZero: o.includeZeroY });
+    const box = { x: m.l, y: m.t, w: W - m.l - m.r, h: H - m.t - m.b };
+    const sx = scale(xd.min, xd.max, box.x, box.x + box.w), sy = scale(yd.min, yd.max, box.y + box.h, box.y);
+    const idp = o.idp || 'pl';
+    let svg = '<g class="plot-axes" font-family="' + esc(font) + '" font-size="11">';
+    if (o.grid !== false) {
+      xd.ticks.forEach(v => { svg += '<line x1="' + r2(sx(v)) + '" y1="' + box.y + '" x2="' + r2(sx(v)) + '" y2="' + (box.y + box.h) + '" stroke="' + line + '" stroke-width="0.6"/>'; });
+      yd.ticks.forEach(v => { svg += '<line x1="' + box.x + '" y1="' + r2(sy(v)) + '" x2="' + (box.x + box.w) + '" y2="' + r2(sy(v)) + '" stroke="' + line + '" stroke-width="0.6"/>'; });
+    }
+    svg += '<rect x="' + box.x + '" y="' + box.y + '" width="' + box.w + '" height="' + box.h + '" fill="none" stroke="' + ink + '" stroke-width="1.2"/>';
+    xd.ticks.forEach(v => { svg += '<text x="' + r2(sx(v)) + '" y="' + (box.y + box.h + 15) + '" text-anchor="middle" fill="' + soft + '">' + fmtTick(v, xd.step) + '</text>'; });
+    yd.ticks.forEach(v => { svg += '<text x="' + (box.x - 6) + '" y="' + r2(sy(v) + 4) + '" text-anchor="end" fill="' + soft + '">' + fmtTick(v, yd.step) + '</text>'; });
+    if (o.xLabel) svg += '<text x="' + r2(box.x + box.w / 2) + '" y="' + (H - 6) + '" text-anchor="middle" fill="' + ink + '" font-size="12">' + esc(o.xLabel) + '</text>';
+    if (o.yLabel) svg += '<text transform="translate(12 ' + r2(box.y + box.h / 2) + ') rotate(-90)" text-anchor="middle" fill="' + ink + '" font-size="12">' + esc(o.yLabel) + '</text>';
+    svg += '</g>';
+    const clipId = idp + '-clip';
+    const clipDef = '<clipPath id="' + clipId + '"><rect x="' + box.x + '" y="' + box.y + '" width="' + box.w + '" height="' + box.h + '"/></clipPath>';
+    return { svg, defs: clipDef, clip: 'url(#' + clipId + ')', clipId, box, sx, sy, xd, yd };
+  }
+
+  // Dots. pts: [[x, y]] (non-finite points are skipped). opts: { r, fill, stroke, shape: 'circle'|'square'|'diamond', title }
+  function points(pts, sx, sy, opts) {
+    opts = opts || {};
+    const r = opts.r || 3.5, fill = opts.fill || '#23272C', stroke = opts.stroke || 'none';
+    return pts.filter(q => isNum(q[0]) && isNum(q[1])).map(([x, y]) => {
+      const X = r2(sx(x)), Y = r2(sy(y));
+      const t = opts.title ? '<title>' + esc(opts.title(x, y)) + '</title>' : '';
+      if (opts.shape === 'square') return '<rect x="' + r2(X - r) + '" y="' + r2(Y - r) + '" width="' + 2 * r + '" height="' + 2 * r + '" fill="' + fill + '" stroke="' + stroke + '">' + t + '</rect>';
+      if (opts.shape === 'diamond') return '<polygon points="' + X + ',' + r2(Y - r * 1.3) + ' ' + r2(X + r * 1.3) + ',' + Y + ' ' + X + ',' + r2(Y + r * 1.3) + ' ' + r2(X - r * 1.3) + ',' + Y + '" fill="' + fill + '" stroke="' + stroke + '">' + t + '</polygon>';
+      return '<circle cx="' + X + '" cy="' + Y + '" r="' + r + '" fill="' + fill + '" stroke="' + stroke + '">' + t + '</circle>';
+    }).join('');
+  }
+
+  // A polyline through pts, broken wherever a point is not finite. opts: { stroke, width, dash, clip }
+  function line(pts, sx, sy, opts) {
+    opts = opts || {};
+    const runs = []; let cur = [];
+    for (const [x, y] of pts) {
+      if (isNum(x) && isNum(y)) cur.push(r2(sx(x)) + ',' + r2(sy(y)));
+      else if (cur.length) { runs.push(cur); cur = []; }
+    }
+    if (cur.length) runs.push(cur);
+    return runs.filter(r => r.length > 1).map(r => '<polyline points="' + r.join(' ') + '" fill="none" stroke="' + (opts.stroke || '#23272C') + '" stroke-width="' + (opts.width || 2) + '"' +
+      (opts.dash ? ' stroke-dasharray="' + opts.dash + '"' : '') + (opts.clip ? ' clip-path="' + opts.clip + '"' : '') + ' stroke-linejoin="round"/>').join('');
+  }
+
+  // Sample f over [x0, x1] for a smooth curve.
+  function sample(f, x0, x1, n) {
+    n = n || 120;
+    const out = [];
+    for (let i = 0; i <= n; i++) { const x = x0 + (x1 - x0) * i / n; out.push([x, f(x)]); }
+    return out;
+  }
+
+  // Horizontal or vertical reference line across the box. o: { axis: 'x'|'y', value, box, sx, sy, stroke, dash, label }
+  function refLine(o) {
+    const s = o.stroke || '#23272C', d = o.dash || '5 4';
+    if (o.axis === 'y') {
+      const Y = r2(o.sy(o.value));
+      return '<line x1="' + o.box.x + '" y1="' + Y + '" x2="' + (o.box.x + o.box.w) + '" y2="' + Y + '" stroke="' + s + '" stroke-width="1.2" stroke-dasharray="' + d + '"/>' +
+        (o.label ? '<text x="' + (o.box.x + 4) + '" y="' + (Y - 4) + '" font-size="11" fill="' + s + '">' + esc(o.label) + '</text>' : '');
+    }
+    const X = r2(o.sx(o.value));
+    return '<line x1="' + X + '" y1="' + o.box.y + '" x2="' + X + '" y2="' + (o.box.y + o.box.h) + '" stroke="' + s + '" stroke-width="1.2" stroke-dasharray="' + d + '"/>' +
+      (o.label ? '<text x="' + (X + 4) + '" y="' + (o.box.y + 12) + '" font-size="11" fill="' + s + '">' + esc(o.label) + '</text>' : '');
+  }
+
+  // Extent of a list of values, ignoring non-finite ones. Returns [lo, hi] or null.
+  function extent(vals) {
+    const a = vals.filter(isNum);
+    return a.length ? [Math.min.apply(null, a), Math.max.apply(null, a)] : null;
+  }
+
+  return { niceStep, niceDomain, scale, fmtTick, frame, points, line, sample, refLine, extent, esc };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = Plot;
+/* END vendor:plot.js */
+/* BEGIN vendor:shell.js */
+// ecosystem/shell/shell.js v1.2.2
+// Shared tool frame for the Engineered by the Numbers tools (spec 00 §2–8):
+// header, footer, help, themes, small-screen notice, predict-first, show the
+// working, field validation, save/load, PNG export, printable report, the
+// prediction log store, settings and Clear my data. A tool supplies its
+// inputs, calculation, drawing and readouts through the config passed to
+// Shell.create(). Needs PredictionLog and Schemas defined first.
+const Shell = (function () {
+  'use strict';
+  const req = (a, b) => { try { return require(a); } catch (e) { return require(b); } };
+  const PL = typeof PredictionLog !== 'undefined' ? PredictionLog : req('./prediction-log.js', '../prediction-log.js');
+  const SC = typeof Schemas !== 'undefined' ? Schemas : req('./schemas.js', '../schemas.js');
+
+  /* =================================================================
+     PURE HELPERS (unit-tested in Node)
+     ================================================================= */
+  const isNum = v => typeof v === 'number' && isFinite(v);
+  const SUP = { '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
+
+  // Significant-figure display (00 §3). Keeps trailing zeros ("4.10"), groups
+  // thousands, uses a true minus sign, never prints NaN or Infinity.
+  function fmtSig(v, sig) {
+    sig = sig || 3;
+    if (!isNum(v)) return '—';
+    if (v === 0 || Object.is(v, -0)) return '0';
+    const a = Math.abs(v);
+    let s;
+    if (a >= 1e7 || a < 1e-4) {
+      const [m, e] = v.toExponential(sig - 1).split('e');
+      s = m + ' × 10' + String(Number(e)).split('').map(c => SUP[c] || c).join('');
+    } else {
+      // Round first so 99.96 at 3 s.f. becomes 100 (not "100.0").
+      const r = Number(v.toPrecision(sig));
+      const digitsBefore = Math.floor(Math.log10(Math.abs(r))) + 1;
+      const decimals = Math.max(0, sig - digitsBefore);
+      s = Math.abs(r).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+      if (r < 0) s = '-' + s;
+    }
+    return s.replace(/^-/, '−');
+  }
+  // Plain number for an input box: up to 6 significant figures, no grouping.
+  function fmtInput(v) { return isNum(v) ? String(Number(v.toPrecision(6))) : ''; }
+  function fmtPct(p, sig) {
+    if (!isNum(p)) return 'not defined';
+    return (p > 0 ? '+' : '') + fmtSig(p, sig) + '%';
+  }
+
+  // Accepts "1,000", "1 000", "−3", ".5". Returns NaN for anything else.
+  function parseNumber(str) {
+    if (typeof str === 'number') return str;
+    const s = String(str == null ? '' : str).trim().replace(/[−–]/g, '-').replace(/(\d)[,\s](?=\d{3}(\D|$))/g, '$1');
+    if (!/^[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i.test(s)) return NaN;
+    return Number(s);
+  }
+
+  // Field validation (00 §8). spec: { name, unit, min, max, gt (exclusive lower bound),
+  // integer, check(v) -> message|null }. Returns { value, error }.
+  function validateNumber(raw, spec) {
+    const name = spec.name || 'This value';
+    const u = spec.unit ? ' ' + spec.unit : '';
+    if (String(raw == null ? '' : raw).trim() === '') return { value: NaN, error: 'Enter a value for ' + lc(name) + '.' };
+    const v = parseNumber(raw);
+    if (!isNum(v)) return { value: NaN, error: name + ' must be a number.' };
+    if (spec.integer && Math.round(v) !== v) return { value: v, error: name + ' must be a whole number.' };
+    if (spec.gt !== undefined && !(v > spec.gt)) return { value: v, error: name + ' must be greater than ' + spec.gt + u + '.' };
+    if (spec.min !== undefined && spec.max !== undefined && (v < spec.min || v > spec.max)) return { value: v, error: name + ' must be between ' + fmtBound(spec.min) + ' and ' + fmtBound(spec.max) + u + '.' };
+    if (spec.min !== undefined && v < spec.min) return { value: v, error: name + ' must be at least ' + fmtBound(spec.min) + u + '.' };
+    if (spec.max !== undefined && v > spec.max) return { value: v, error: name + ' must be at most ' + fmtBound(spec.max) + u + '.' };
+    if (spec.check) { const m = spec.check(v); if (m) return { value: v, error: m }; }
+    return { value: v, error: null };
+  }
+  const fmtBound = v => Math.abs(v) >= 10000 ? v.toLocaleString('en-US') : String(v);
+  const lc = s => s.charAt(0).toLowerCase() + s.slice(1);
+
+  // 00 §6: <name>_<tool>_<challenge or sandbox>_<YYYY-MM-DD>.<ext>
+  function safePart(s) { return String(s || '').trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/-+/g, '-').replace(/^[-.]+|[-.]+$/g, ''); }
+  function exportName(o) {
+    const base = [safePart(o.student) || 'unnamed', safePart(o.tool), safePart(o.context) || 'sandbox', o.dateISO].join('_');
+    return o.ext ? base + '.' + o.ext : base;
+  }
+  function localDateISO(d) {
+    d = d || new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  // 00 §4.5 default bands: within 1% "Match", within 5% "Close".
+  function verdictFor(pct, tol) {
+    tol = tol || { match: 1, close: 5 };
+    if (!isNum(pct)) return null;
+    const a = Math.abs(pct);
+    return a <= tol.match ? 'match' : a <= tol.close ? 'close' : 'off';
+  }
+  // Yes/no targets (kind: 'yesno') are logged as 1 for yes and 0 for no (QUESTIONS Q13).
+  const yesNo = v => v === 1 ? 'yes' : v === 0 ? 'no' : 'not defined';
+  function yesNoMessage(pred, model, reason) {
+    if (model !== 0 && model !== 1) return 'You predicted ' + yesNo(pred) + '. The model answer is not defined' + (reason ? ': ' + reason : '') + '.';
+    return 'You predicted ' + yesNo(pred) + '. The model says ' + yesNo(model) + '.';
+  }
+  function predictionMessage(pred, model, unit, sig, reason) {
+    const u = unit ? ' ' + unit : '';
+    if (!isNum(model)) return 'You predicted ' + fmtSig(pred, sig) + u + '. The model value is not defined' + (reason ? ': ' + reason : '') + '.';
+    const pct = PL.pctDiff(pred, model);
+    return 'You predicted ' + fmtSig(pred, sig) + u + '. The model gives ' + fmtSig(model, sig) + u +
+      (pct === null ? ' (difference not defined: the model value is 0).' : ' (' + fmtPct(pct, sig) + ' difference).');
+  }
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // Teacher challenge lists (00 §4.5–4.6). Accepts a JSON string, an object
+  // { tool, schemaVersion, challenges: [...] } or a bare array of challenges.
+  // Each challenge: { id, title, brief, inputs: {key: SI value}, hidden: [key],
+  // tolerance: { match, close } (percent), requirePrediction, predictFirst }.
+  // Returns { value: { challenges }, warnings }, or throws with a message for the teacher.
+  const CHALLENGE_VERSION = 1;
+  function readChallengeList(input, tool) {
+    let obj = input;
+    if (typeof input === 'string') {
+      try { obj = JSON.parse(input); } catch (e) { throw new Error('The challenge list is not valid JSON. Check for a missing comma, quote or bracket.'); }
+    }
+    if (Array.isArray(obj)) obj = { challenges: obj };
+    if (!obj || typeof obj !== 'object' || !Array.isArray(obj.challenges)) throw new Error('A challenge list needs a "challenges" list.');
+    if (obj.tool && tool && obj.tool !== tool) throw new Error('This challenge list is for the ' + obj.tool + ', not the ' + tool + '.');
+    const warnings = [];
+    if (isNum(obj.schemaVersion) && obj.schemaVersion > CHALLENGE_VERSION) warnings.push('This list was made for a newer tool version; some fields may be ignored.');
+    const seen = new Set();
+    const challenges = obj.challenges.map((c, i) => {
+      const where = 'Challenge ' + (i + 1);
+      if (!c || typeof c !== 'object') throw new Error(where + ' is not an object.');
+      const id = typeof c.id === 'string' ? c.id.trim() : '';
+      if (!id) throw new Error(where + ' needs an "id", for example "FS-1".');
+      if (seen.has(id)) throw new Error('Two challenges have the id "' + id + '". Each id must be different.');
+      seen.add(id);
+      const inputs = c.inputs === undefined ? {} : c.inputs;
+      if (!inputs || typeof inputs !== 'object' || Array.isArray(inputs)) throw new Error(id + ': "inputs" must be an object of input names and values.');
+      for (const k in inputs) if (!isNum(inputs[k]) && typeof inputs[k] !== 'string' && typeof inputs[k] !== 'boolean') throw new Error(id + ': input "' + k + '" must be a number, text or true/false.');
+      const hidden = c.hidden === undefined ? [] : c.hidden;
+      if (!Array.isArray(hidden) || hidden.some(k => typeof k !== 'string')) throw new Error(id + ': "hidden" must be a list of input names.');
+      let tolerance = null;
+      if (c.tolerance !== undefined) {
+        const t = c.tolerance;
+        if (!t || !isNum(t.match) || !isNum(t.close) || t.match <= 0 || t.close < t.match) throw new Error(id + ': "tolerance" needs "match" and "close" percentages, with 0 < match ≤ close.');
+        tolerance = { match: t.match, close: t.close };
+      }
+      return {
+        id, title: typeof c.title === 'string' && c.title.trim() ? c.title.trim() : id,
+        brief: typeof c.brief === 'string' ? c.brief : '',
+        inputs, hidden, tolerance,
+        requirePrediction: c.requirePrediction === true,
+        predictFirst: c.predictFirst !== false,
+        example: c.example === true,
+      };
+    });
+    return { value: { challenges }, warnings };
+  }
+
+  const util = { fmtSig, fmtInput, fmtPct, parseNumber, validateNumber, exportName, safePart, localDateISO, verdictFor, predictionMessage, yesNoMessage, esc, readChallengeList };
+
+  /* =================================================================
+     BROWSER FRAME
+     ================================================================= */
+  const FEEDBACK = 'billvanloo.tech+feedback@gmail.com';
+
+  function store(prefix) {
+    return {
+      get(k, dflt) { try { const s = localStorage.getItem(prefix + k); return s == null ? dflt : JSON.parse(s); } catch (e) { return dflt; } },
+      set(k, v) { try { localStorage.setItem(prefix + k, JSON.stringify(v)); } catch (e) { /* storage full or blocked */ } },
+      del(k) { try { localStorage.removeItem(prefix + k); } catch (e) { } },
+      clearAll() { try { Object.keys(localStorage).filter(k => k.indexOf(prefix) === 0).forEach(k => localStorage.removeItem(k)); } catch (e) { } },
+    };
+  }
+  function h(tag, attrs, html) {
+    const el = document.createElement(tag);
+    if (attrs) for (const k in attrs) { if (attrs[k] !== null && attrs[k] !== undefined && attrs[k] !== false) el.setAttribute(k, attrs[k] === true ? '' : attrs[k]); }
+    if (html !== undefined) el.innerHTML = html;
+    return el;
+  }
+  function download(filename, data, type) {
+    const blob = data instanceof Blob ? data : new Blob([data], { type: type || 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = h('a', { href: url, download: filename });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) {
+      const ta = h('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      let ok = false; try { ok = document.execCommand('copy'); } catch (e2) { }
+      ta.remove(); return ok;
+    }
+  }
+
+  function create(cfg) {
+    const S = store('ebtn:' + cfg.slug + ':');
+    const G = store('ebtn-');                       // shared across tools on one site: name, theme
+    const app = {
+      cfg, util, PL, SC,
+      state: null, el: {},
+      settings: Object.assign({ sig: 3, team: '', classPeriod: '', predictFirst: false }, cfg.defaultSettings || {}, S.get('settings', {})),
+      pf: { revealed: false, groups: {}, fields: {}, messages: [] },
+      invalid: {}, fields: [], log: S.get('log', []),
+      sessionStart: Date.now(), working: [],
+    };
+
+    /* ---------------- state ---------------- */
+    const saved = S.get('state', null);
+    app.state = cfg.defaultState();
+    if (saved && saved.schemaVersion === cfg.schemaVersion && saved.state) {
+      try { app.state = Object.assign(cfg.defaultState(), saved.state); } catch (e) { app.state = cfg.defaultState(); }
+    }
+
+    /* ---------------- skeleton ---------------- */
+    const repoUrl = 'https://github.com/billvanloo/' + cfg.repo;
+    const mail = kind => 'mailto:' + FEEDBACK + '?subject=' + encodeURIComponent('[' + cfg.repo + '] ' + kind);
+    document.body.innerHTML = '';
+    const header = h('header', { class: 'sh-header' },
+      '<div class="titleblock"><span class="t1">' + esc(cfg.tool) + '</span><span class="t2">' + esc(cfg.subtitle || '') + '</span></div>' +
+      '<div id="shModes"></div><div id="shTabs"></div>' +
+      '<div class="chwrap" id="shChWrap" hidden><label for="shChallenge">Challenge</label><select id="shChallenge"></select></div>' +
+      '<div class="spacer"></div>' +
+      '<div class="namewrap" id="shNameWrap"><label for="shName">Name</label><input id="shName" maxlength="40" placeholder="Your name" autocomplete="name"></div>' +
+      '<div class="hbtns">' +
+      '<button id="shPredict" aria-pressed="false" title="Hide results until you enter and check a prediction">Predict first</button>' +
+      '<button id="shPng" title="Download a PNG of the drawing">Export image</button>' +
+      '<button id="shReport" title="Printable report (print to PDF)">Report</button>' +
+      '<button id="shSave" title="Save your design as a file">Save</button>' +
+      '<button id="shLoad" title="Open a saved design or an import file">Load</button>' +
+      '<button id="shLog" title="Your prediction log">Log</button>' +
+      '<button id="shSettings" aria-label="Settings" title="Settings">⚙</button>' +
+      '<button id="shTheme" aria-pressed="false" title="Switch light or dark theme">theme</button>' +
+      '<button id="shHelp" aria-label="Help" title="How to use this tool (?)">?</button>' +
+      '</div><input type="file" id="shFile" accept=".json,.csv,application/json,text/csv" hidden' + (cfg.onFiles ? ' multiple' : '') + '>');
+    const brief = h('div', { id: 'shBrief', class: 'sh-brief', role: 'note', hidden: true });
+    const small = h('div', { id: 'shSmall', class: 'sh-small', role: 'note' },
+      '<span>This tool needs a larger screen, at least 1024 px wide, for full use. The readouts still work here.</span><button type="button">Dismiss</button>');
+    const main = h('main', { class: 'sh-main', id: 'shMain' },
+      '<section id="shInputs" class="sh-col sh-inputs" aria-label="Inputs"></section>' +
+      '<section id="shStage" class="sh-col sh-stage" aria-label="Drawing"></section>' +
+      '<section id="shResults" class="sh-col sh-results" aria-label="Results">' +
+      '<div id="shResultsBody"></div>' +
+      '<div id="shPfBox" class="pfbox" hidden></div>' +
+      '<details id="shWorking" class="working"><summary>Show the working</summary><div id="shWorkingBody"></div></details>' +
+      '</section>');
+    const footer = h('footer', { class: 'sh-footer' },
+      '<span class="foot-by">Designed by <a href="https://billvanloo.com" target="_blank" rel="noopener"><strong>Bill Van Loo</strong></a></span>' +
+      '<span class="foot-ai">Developed using Claude — please don\'t use this tool if you\'re uncomfortable using tools built with AI assistance.</span>' +
+      '<span class="foot-spacer"></span>' +
+      '<a href="' + mail('Bug report') + '">Report a bug</a>' +
+      '<a href="' + mail('Feature request') + '">Request a feature</a>' +
+      '<a href="https://ko-fi.com/billvanloo" target="_blank" rel="noopener">Support on Ko-fi</a>' +
+      '<a href="' + repoUrl + '/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>' +
+      '<a href="' + repoUrl + '" target="_blank" rel="noopener">View source</a>');
+    const live = h('div', { id: 'shLive', class: 'sr-only', role: 'status', 'aria-live': 'polite' });
+    const desc = h('div', { id: 'shDesc', class: 'sr-only', 'aria-live': 'polite' });
+    const toastEl = h('div', { id: 'shToast', class: 'sh-toast', role: 'status', 'aria-live': 'polite' });
+    const report = h('div', { id: 'sh-report' });
+    [header, small, brief, main, footer, live, desc, toastEl, report].forEach(e => document.body.appendChild(e));
+    const $ = id => document.getElementById(id);
+    app.el = { inputs: $('shInputs'), stage: $('shStage'), results: $('shResultsBody'), pf: $('shPfBox'), working: $('shWorkingBody'), workingBox: $('shWorking') };
+
+    /* ---------------- dialogs ---------------- */
+    function dialog(id, title) {
+      const d = h('dialog', { id, class: 'sh-dlg', 'aria-labelledby': id + 'T' },
+        '<div class="dlg-h"><h2 id="' + id + 'T">' + esc(title) + '</h2><button class="btn small" data-close>Close</button></div><div class="dlg-b"></div>');
+      d.querySelector('[data-close]').addEventListener('click', () => d.close());
+      d.addEventListener('click', e => { if (e.target === d) d.close(); });
+      document.body.appendChild(d);
+      return { dlg: d, body: d.querySelector('.dlg-b') };
+    }
+    const helpD = dialog('shHelpDlg', 'How to use the ' + cfg.tool);
+    const logD = dialog('shLogDlg', 'Prediction log');
+    const setD = dialog('shSettingsDlg', 'Settings');
+
+    /* ---------------- toast, live regions ---------------- */
+    let toastT = 0;
+    app.toast = (msg, ms) => {
+      toastEl.textContent = msg; toastEl.classList.add('on');
+      clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('on'), ms || 3500);
+    };
+    app.announce = msg => { live.textContent = ''; setTimeout(() => { live.textContent = msg; }, 30); };
+    let descT = 0, lastDesc = '';
+    app.describe = text => {
+      if (text === lastDesc) return;
+      lastDesc = text; clearTimeout(descT);
+      descT = setTimeout(() => { desc.textContent = text; }, 450);
+    };
+
+    /* ---------------- theme ---------------- */
+    const curTheme = () => document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    function syncTheme() {
+      const t = curTheme();
+      $('shTheme').textContent = t === 'light' ? '☾ Dark' : '☀ Light';
+      $('shTheme').setAttribute('aria-pressed', t === 'dark' ? 'true' : 'false');
+    }
+    $('shTheme').addEventListener('click', () => {
+      const next = curTheme() === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      G.set('theme', next);
+      syncTheme(); render();
+    });
+    // Palette for drawings, read from the CSS tokens.
+    const PAL_KEYS = ['paper', 'grid-minor', 'grid-major', 'ink', 'ink-soft', 'line', 'steel', 'steel-edge', 'dykem', 'dykem-soft', 'brass', 'brass-ink', 'pass', 'fail', 'warn', 'pos-fill', 'neg-fill', 'field', 'panel', 'badge-text'];
+    app.pal = () => {
+      const cs = getComputedStyle(document.documentElement), p = {};
+      PAL_KEYS.forEach(k => { p[k.replace(/-(\w)/g, (m, c) => c.toUpperCase())] = cs.getPropertyValue('--' + k).trim(); });
+      p.fontUi = cs.getPropertyValue('--font-ui').trim(); p.fontMono = cs.getPropertyValue('--font-mono').trim();
+      return p;
+    };
+    // Exports and reports are always ink on paper (00 §2).
+    app.withLight = fn => {
+      const root = document.documentElement, prev = root.getAttribute('data-theme');
+      root.setAttribute('data-theme', 'light');
+      try { return fn(); } finally { root.setAttribute('data-theme', prev || 'light'); }
+    };
+
+    /* ---------------- formatting ---------------- */
+    app.fmt = v => fmtSig(v, app.settings.sig);
+    app.fmtU = (v, unit) => isNum(v) ? fmtSig(v, app.settings.sig) + (unit ? ' ' + unit : '') : '—';
+
+    /* ---------------- name ---------------- */
+    const nameEl = $('shName');
+    nameEl.value = G.get('name', '') || '';
+    nameEl.addEventListener('input', () => G.set('name', nameEl.value));
+    app.student = () => nameEl.value.trim();
+    // A teacher tool (the Collector) has no student name and no predict first.
+    if (cfg.nameField === false) $('shNameWrap').hidden = true;
+    if (cfg.predictFirst === false) { $('shPredict').hidden = true; $('shLog').hidden = true; app.settings.predictFirst = false; }
+
+    /* ---------------- small screen ---------------- */
+    if (G.get('smallDismissed', false)) small.hidden = true;
+    small.querySelector('button').addEventListener('click', () => { small.hidden = true; G.set('smallDismissed', true); });
+
+    /* ---------------- modes ---------------- */
+    if (cfg.modes) {
+      const box = $('shModes');
+      box.className = 'modes'; box.setAttribute('role', 'group'); box.setAttribute('aria-label', cfg.modes.label || 'Mode');
+      cfg.modes.options.forEach(o => {
+        const b = h('button', { type: 'button', 'data-mode': o.id, 'aria-pressed': 'false' }, esc(o.label));
+        b.addEventListener('click', () => { cfg.modes.set(app, o.id); app.changed(); });
+        box.appendChild(b);
+      });
+    }
+    function syncModes() {
+      if (!cfg.modes) return;
+      const cur = cfg.modes.get(app);
+      document.querySelectorAll('#shModes button').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === cur ? 'true' : 'false'));
+    }
+
+    /* ---------------- tabs ---------------- */
+    // cfg.tabs: { label, options: [{ id, label }], get(app), set(app, id) }. Switching a
+    // tab is not an input change, so predictions stay. The tab lives in the tool's state.
+    if (cfg.tabs) {
+      const box = $('shTabs');
+      box.className = 'tabs'; box.setAttribute('role', 'tablist'); box.setAttribute('aria-label', cfg.tabs.label || 'Views');
+      cfg.tabs.options.forEach(o => {
+        const b = h('button', { type: 'button', role: 'tab', id: 'shTab_' + o.id, 'data-tab': o.id, 'aria-selected': 'false', 'aria-controls': 'shMain', tabindex: '-1' }, esc(o.label));
+        b.addEventListener('click', () => app.selectTab(o.id));
+        box.appendChild(b);
+      });
+      box.addEventListener('keydown', e => {
+        const ids = cfg.tabs.options.map(o => o.id);
+        let i = ids.indexOf(cfg.tabs.get(app));
+        if (e.key === 'ArrowRight') i = (i + 1) % ids.length;
+        else if (e.key === 'ArrowLeft') i = (i - 1 + ids.length) % ids.length;
+        else if (e.key === 'Home') i = 0;
+        else if (e.key === 'End') i = ids.length - 1;
+        else return;
+        e.preventDefault();
+        app.selectTab(ids[i]);
+        $('shTab_' + ids[i]).focus();
+      });
+    }
+    app.tab = () => cfg.tabs ? cfg.tabs.get(app) : null;
+    app.selectTab = id => {
+      if (!cfg.tabs || app.tab() === id) return;
+      const o = cfg.tabs.options.find(x => x.id === id);
+      if (!o) return;
+      cfg.tabs.set(app, id);
+      saveState(); render();
+      app.announce(o.label + ' tab.');
+    };
+    function syncTabs() {
+      if (!cfg.tabs) return;
+      const cur = app.tab();
+      document.querySelectorAll('#shTabs [role="tab"]').forEach(b => {
+        const on = b.dataset.tab === cur;
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+        b.setAttribute('tabindex', on ? '0' : '-1');
+      });
+      document.body.setAttribute('data-tab', cur || '');
+    }
+
+    /* ---------------- challenges (00 §4.5–4.6) ---------------- */
+    // cfg.challenges: { builtIn: [...] (examples), active(app) -> challenge mode on?,
+    // apply(app, challenge) (default: copy challenge.inputs into app.state) }.
+    // A teacher's list, pasted in Settings, replaces the built-in examples.
+    const CH = cfg.challenges || null;
+    const builtInChallenges = () => {
+      if (!CH || !CH.builtIn) return [];
+      try { return readChallengeList(CH.builtIn, cfg.tool).value.challenges; } catch (e) { console.error('Built-in challenges are not valid: ' + e.message); return []; }
+    };
+    app.challengeList = () => {
+      const t = CH ? S.get('challenges', null) : null;
+      if (t) { try { return readChallengeList(t, cfg.tool).value.challenges; } catch (e) { /* fall back to the examples */ } }
+      return builtInChallenges();
+    };
+    app.isChallengeMode = () => !!CH && (CH.active ? !!CH.active(app) : !!(cfg.modes && cfg.modes.get(app) === 'challenge'));
+    app.challenge = () => {
+      if (!app.isChallengeMode() || !app.settings.challengeId) return null;
+      return app.challengeList().find(c => c.id === app.settings.challengeId) || null;
+    };
+    app.isHidden = key => { const c = app.challenge(); return !!(c && c.hidden.indexOf(key) >= 0); };
+    app.startChallenge = id => {
+      const c = app.challengeList().find(x => x.id === id) || null;
+      app.settings.challengeId = c ? c.id : null;
+      if (c) {
+        if (c.predictFirst || c.requirePrediction) app.settings.predictFirst = true;
+        if (CH.apply) CH.apply(app, c);
+        else for (const k in c.inputs) if (Object.prototype.hasOwnProperty.call(app.state, k)) app.state[k] = c.inputs[k];
+      }
+      saveSettings(); app.invalid = {};
+      clearPrediction(); app.refreshFields(); saveState(); render();
+      app.announce(c ? 'Challenge ' + c.id + ': ' + c.title + '.' : 'No challenge chosen.');
+    };
+    // 00 §4.6: a challenge can require a checked prediction before Run (or Spin up, Turn ...).
+    app.gate = () => {
+      const c = app.challenge();
+      if (!c || !c.requirePrediction || (pfOn() && app.pf.revealed)) return true;
+      app.toast('Check your prediction first.'); app.announce('Check your prediction first.');
+      return false;
+    };
+    if (CH) $('shChallenge').addEventListener('change', e => app.startChallenge(e.target.value));
+    function syncChallenge() {
+      if (!CH) return;
+      const on = app.isChallengeMode(), list = app.challengeList(), c = app.challenge();
+      $('shChWrap').hidden = !on;
+      const sel = $('shChallenge');
+      const html = '<option value="">Choose a challenge</option>' + list.map(x => '<option value="' + esc(x.id) + '">' + esc(x.id + ' · ' + x.title) + (x.example ? ' (example)' : '') + '</option>').join('');
+      if (sel.innerHTML !== html) sel.innerHTML = html;
+      sel.value = c ? c.id : '';
+      brief.hidden = !(on && c);
+      if (on && c) {
+        const bh = '<strong>' + esc(c.id + ' · ' + c.title) + '</strong>' + (c.brief ? ' ' + esc(c.brief) : '') +
+          (c.hidden.length ? ' <span class="note">Some values are hidden for this challenge.</span>' : '') +
+          (c.requirePrediction ? ' <span class="note">Check a prediction before you run it.</span>' : '');
+        if (brief.innerHTML !== bh) brief.innerHTML = bh;
+      }
+    }
+
+    /* =================================================================
+       FIELDS
+       ================================================================= */
+    // Numeric input row. o: { id, label, unit, name, get(app), set(app, v), min, max, gt, integer,
+    // check(v, app), step, help, parent, key }. `key` names the value for challenges: a
+    // challenge that hides that key shows "hidden" in a locked box.
+    app.numField = (parent, o) => {
+      const row = h('div', { class: 'fld' });
+      const errId = o.id + 'Err';
+      row.innerHTML = '<label for="' + o.id + '">' + o.label + '</label>' +
+        '<span class="ctl"><input type="text" inputmode="decimal" id="' + o.id + '" aria-describedby="' + errId + '" autocomplete="off">' +
+        (o.unit ? '<span class="unit">' + esc(o.unit) + '</span>' : '') + '</span>' +
+        '<div class="err" id="' + errId + '" role="alert"></div>';
+      const input = row.querySelector('input'), err = row.querySelector('.err');
+      const spec = () => ({ name: o.name || o.label.replace(/<[^>]+>/g, ''), unit: o.unit, min: typeof o.min === 'function' ? o.min(app) : o.min, max: typeof o.max === 'function' ? o.max(app) : o.max, gt: o.gt, integer: o.integer, check: o.check ? v => o.check(v, app) : null });
+      function commit() {
+        const r = validateNumber(input.value, spec());
+        if (r.error) {
+          err.textContent = r.error; input.setAttribute('aria-invalid', 'true'); app.invalid[o.id] = r.error;
+        } else {
+          err.textContent = ''; input.removeAttribute('aria-invalid'); delete app.invalid[o.id];
+          o.set(app, r.value);
+        }
+        app.changed();
+      }
+      input.addEventListener('input', commit);
+      input.addEventListener('keydown', e => {
+        if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && o.step) {
+          e.preventDefault();
+          const cur = parseNumber(input.value);
+          const base = isNum(cur) ? cur : o.get(app);
+          const d = (e.key === 'ArrowUp' ? 1 : -1) * o.step * (e.shiftKey ? 10 : 1);
+          input.value = fmtInput(Number((base + d).toFixed(10)));
+          commit();
+        }
+      });
+      const hid = () => !!(o.key && app.isHidden(o.key));
+      // Returns true when the box is showing "hidden" and must not be refreshed.
+      const lockHidden = () => {
+        if (hid()) { input.disabled = true; input.value = 'hidden'; err.textContent = ''; input.removeAttribute('aria-invalid'); delete app.invalid[o.id]; return true; }
+        if (input.disabled && input.value === 'hidden') { input.disabled = false; input.value = fmtInput(o.get(app)); }
+        return false;
+      };
+      const field = {
+        o, input, err, row,
+        sync() {
+          if (lockHidden()) return;
+          if (document.activeElement === input || app.invalid[o.id]) return;
+          const v = o.get(app); const s = fmtInput(v);
+          if (input.value !== s && parseNumber(input.value) !== v) input.value = s;
+          else if (input.value === '' && s !== '') input.value = s;
+        },
+        revalidate() { if (!hid() && input.value !== '') { const r = validateNumber(input.value, spec()); if (r.error && !app.invalid[o.id]) { err.textContent = r.error; input.setAttribute('aria-invalid', 'true'); app.invalid[o.id] = r.error; } else if (!r.error && app.invalid[o.id]) { err.textContent = ''; input.removeAttribute('aria-invalid'); delete app.invalid[o.id]; o.set(app, r.value); } } },
+        reset() { if (lockHidden()) return; err.textContent = ''; input.removeAttribute('aria-invalid'); delete app.invalid[o.id]; input.value = fmtInput(o.get(app)); },
+      };
+      input.value = fmtInput(o.get(app));
+      app.fields.push(field);
+      parent.appendChild(row);
+      return field;
+    };
+    // Select row. o: { id, label, options: [[value, label]] or fn(app), get, set }
+    app.selectField = (parent, o) => {
+      const row = h('div', { class: 'fld' });
+      row.innerHTML = '<label for="' + o.id + '">' + o.label + '</label><span class="ctl"><select id="' + o.id + '"></select></span>';
+      const sel = row.querySelector('select');
+      const fill = () => {
+        const opts = typeof o.options === 'function' ? o.options(app) : o.options;
+        const html = opts.map(([v, l]) => '<option value="' + esc(v) + '">' + esc(l) + '</option>').join('');
+        if (sel.innerHTML !== html) sel.innerHTML = html;
+        sel.value = String(o.get(app));
+      };
+      fill();
+      sel.addEventListener('change', () => { o.set(app, sel.value); app.changed(); });
+      const field = { o, input: sel, row, sync: fill, reset: fill, revalidate() { } };
+      app.fields.push(field);
+      parent.appendChild(row);
+      return field;
+    };
+    app.checkField = (parent, o) => {
+      const row = h('label', { class: 'chk' }, '<input type="checkbox" id="' + o.id + '"> ' + o.label);
+      const cb = row.querySelector('input');
+      cb.checked = !!o.get(app);
+      cb.addEventListener('change', () => { o.set(app, cb.checked); app.changed(); });
+      const field = { o, input: cb, row, sync() { cb.checked = !!o.get(app); }, reset() { cb.checked = !!o.get(app); }, revalidate() { } };
+      app.fields.push(field);
+      parent.appendChild(row);
+      return field;
+    };
+    app.removeFields = container => { app.fields = app.fields.filter(f => { if (container.contains(f.row)) { delete app.invalid[f.o.id]; return false; } return true; }); };
+    app.hasInvalid = () => Object.keys(app.invalid).length > 0;
+    app.invalidReason = () => 'not defined: fix the highlighted input' + (Object.keys(app.invalid).length > 1 ? 's' : '');
+
+    /* =================================================================
+       PREDICT FIRST (00 §4)
+       ================================================================= */
+    const pfOn = () => !!app.settings.predictFirst;
+    // Predict targets can carry a `group` (and `groupLabel`). Each group has its own
+    // Check, so a team can predict one design step before seeing the next. A tool with
+    // no groups behaves as one group named ''.
+    const groupsOf = targets => {
+      const gs = [];
+      targets.forEach(t => { const g = t.group || ''; if (gs.indexOf(g) < 0) gs.push(g); });
+      return gs.length ? gs : [''];
+    };
+    const grp = g => { g = g || ''; return app.pf.groups[g] || (app.pf.groups[g] = { revealed: false, messages: [] }); };
+    // masked(): true while any group is still hidden. masked(group): that group only.
+    app.masked = g => {
+      if (!pfOn()) return false;
+      if (g !== undefined) return !grp(g).revealed;
+      return !app.pf.revealed;
+    };
+    // Wrap a readout value: shows a blank box while hidden.
+    app.show = (text, g) => app.masked(g) ? '<span class="masked" aria-label="hidden until you check your prediction">?</span>' : text;
+    function clearPrediction() { app.pf.revealed = false; app.pf.groups = {}; app.pf.fields = {}; app.pf.messages = []; }
+    $('shPredict').addEventListener('click', () => {
+      const c = app.challenge();
+      if (c && c.requirePrediction && pfOn()) { app.toast('This challenge needs predict first.'); return; }
+      app.settings.predictFirst = !pfOn(); saveSettings(); clearPrediction(); render();
+      app.announce(pfOn() ? 'Predict first is on. Results are hidden until you check a prediction.' : 'Predict first is off.');
+    });
+    function problemId() {
+      if (cfg.problemId) return cfg.problemId(app);
+      const c = app.challenge();
+      return c ? c.id : PL.sandboxProblemId(snapshot().values);
+    }
+    function snapshot() { return cfg.inputsSnapshot ? cfg.inputsSnapshot(app) : { values: {}, units: {} }; }
+    const tolerance = () => { const c = app.challenge(); return (c && c.tolerance) || cfg.tolerance; };
+    const gid = g => g ? '_' + String(g).replace(/[^A-Za-z0-9_-]/g, '-') : '';
+    function renderPf() {
+      const box = app.el.pf;
+      $('shPredict').setAttribute('aria-pressed', pfOn() ? 'true' : 'false');
+      if (!pfOn()) { box.hidden = true; return; }
+      box.hidden = false;
+      const targets = cfg.predictTargets(app);
+      const gs = groupsOf(targets), multi = gs.length > 1;
+      const blocked = app.hasInvalid();
+      let html = '<h3>Predict first</h3>';
+      if (gs.some(g => !grp(g).revealed)) html += '<p class="note">Enter your predictions, then press Check. Results stay hidden until you do.</p>';
+      gs.forEach(g => {
+        const ts = targets.filter(t => (t.group || '') === g), st = grp(g), sfx = gid(g);
+        if (multi) html += '<div class="pfgroup" data-group="' + esc(g) + '"><h4>' + (ts[0] && ts[0].groupLabel ? ts[0].groupLabel : esc(g)) + '</h4>';
+        if (!st.revealed) {
+          ts.forEach(t => {
+            const id = 'shPf_' + t.key, cur = app.pf.fields[t.key] || '';
+            const ctl = t.kind === 'yesno'
+              ? '<select id="' + id + '" data-key="' + esc(t.key) + '" data-group="' + esc(g) + '"><option value=""' + (cur === '' ? ' selected' : '') + '>—</option><option value="1"' + (cur === '1' ? ' selected' : '') + '>Yes</option><option value="0"' + (cur === '0' ? ' selected' : '') + '>No</option></select><span class="unit"></span>'
+              : '<input type="text" inputmode="decimal" id="' + id + '" data-key="' + esc(t.key) + '" data-group="' + esc(g) + '" value="' + esc(cur) + '" autocomplete="off"><span class="unit">' + esc(t.unit || '') + '</span>';
+            html += '<div class="pfrow"><label for="' + id + '">' + t.label + '</label>' + ctl + '</div>';
+          });
+          html += '<div class="btnrow"><button class="btn primary" id="shCheck' + sfx + '" data-check="' + esc(g) + '" type="button"' + (blocked ? ' disabled' : '') + '>Check</button></div>';
+        } else {
+          st.messages.forEach(m => { html += '<div class="pfmsg ' + (m.verdict || '') + '">' + m.html + '</div>'; });
+          html += '<div class="btnrow"><button class="btn" id="shAgain' + sfx + '" data-again="' + esc(g) + '" type="button">Predict again</button></div>';
+        }
+        if (multi) html += '</div>';
+      });
+      if (blocked && gs.some(g => !grp(g).revealed)) html += '<p class="note warn">Fix the highlighted input before checking.</p>';
+      box.innerHTML = html;
+      box.querySelectorAll('[data-key]').forEach(inp => inp.addEventListener(inp.tagName === 'SELECT' ? 'change' : 'input', () => { app.pf.fields[inp.dataset.key] = inp.value; }));
+      // preventDefault: Check moves focus to "Predict again", and without it the same Enter
+      // press would go on to activate that button and undo the Check at once.
+      box.querySelectorAll('[data-key]').forEach(inp => inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); check(inp.dataset.group); } }));
+      box.querySelectorAll('[data-check]').forEach(b => b.addEventListener('click', () => check(b.dataset.check)));
+      box.querySelectorAll('[data-again]').forEach(b => b.addEventListener('click', () => {
+        const g = b.dataset.again, st = grp(g);
+        st.revealed = false; st.messages = []; app.pf.revealed = false;
+        cfg.predictTargets(app).filter(t => (t.group || '') === g).forEach(t => { delete app.pf.fields[t.key]; });
+        render();
+        const f = box.querySelector('[data-key][data-group="' + (window.CSS && CSS.escape ? CSS.escape(g) : g) + '"]'); if (f) f.focus();
+      }));
+    }
+    function check(g) {
+      g = g || '';
+      if (app.hasInvalid()) return;
+      const all = cfg.predictTargets(app);
+      const targets = all.filter(t => (t.group || '') === g);
+      const student = app.student() || 'unnamed';
+      const pid = problemId(), snap = snapshot();
+      const msgs = [], recs = [];
+      for (const t of targets) {
+        const raw = app.pf.fields[t.key];
+        if (raw === undefined || String(raw).trim() === '') continue;
+        const p = parseNumber(raw);
+        if (!isNum(p)) { app.toast(t.label.replace(/<[^>]+>/g, '') + ': enter a number.'); document.getElementById('shPf_' + t.key).focus(); return; }
+        const yn = t.kind === 'yesno';
+        if (yn && p !== 0 && p !== 1) { app.toast(t.label.replace(/<[^>]+>/g, '') + ': choose yes or no.'); return; }
+        const model = isNum(t.model) ? t.model : null;
+        const rec = PL.makeRecord({
+          tool: cfg.tool, toolVersion: cfg.version, student, team: app.settings.team, classPeriod: app.settings.classPeriod,
+          problemId: pid, quantity: t.quantity || t.key, unit: yn ? 'yes/no' : t.unit || '', predicted: p, model, measured: t.measured,
+          attempt: PL.nextAttempt(app.log, student, pid, t.quantity || t.key), inputs: snap,
+        });
+        recs.push(rec);
+        const v = yn ? (model === p ? 'match' : 'off') : verdictFor(rec.pctPredVsModel, tolerance());
+        const tag = v === 'match' ? ' <span class="pftag match">Match</span>' : v === 'close' ? ' <span class="pftag close">Close</span>' : '';
+        msgs.push({ verdict: v === 'match' ? 'match' : v === 'close' ? 'close' : '', html: '<b>' + t.label + '</b>' + tag + '<br>' + esc(yn ? yesNoMessage(p, model, t.reason) : predictionMessage(p, model, t.unit, app.settings.sig, t.reason)) });
+      }
+      if (!recs.length) msgs.push({ html: 'No prediction was entered, so nothing was logged. The results are shown below.' });
+      app.log = app.log.concat(recs); saveLog();
+      const st = grp(g);
+      st.revealed = true; st.messages = msgs;
+      app.pf.messages = msgs;
+      app.pf.revealed = groupsOf(all).every(x => grp(x).revealed);
+      render();
+      app.announce(msgs.map(m => m.html.replace(/<[^>]+>/g, ' ')).join(' '));
+      const again = $('shAgain' + gid(g)); if (again) again.focus();
+    }
+    app.check = check;
+    // Attach a measured value to this student's latest prediction of a quantity for the
+    // current inputs (a target's `quantity`). Returns the updated record, or null when
+    // there is no such prediction yet. A target can also carry `measured` at Check.
+    app.recordMeasured = (quantity, measured) => {
+      const res = PL.annotateLatest(app.log, { student: app.student() || 'unnamed', problemId: problemId(), quantity, tool: cfg.tool }, { measured });
+      if (res.index < 0) return null;
+      app.log = res.records; saveLog();
+      return app.log[res.index];
+    };
+
+    /* =================================================================
+       SHOW THE WORKING (00 §5)
+       ================================================================= */
+    // steps: [{ title, formula, sub, result, note, source }], or groups of them:
+    // [{ heading, group, steps: [...] }]. A group with a predict `group` stays hidden
+    // until that group's prediction is checked.
+    app.setWorking = steps => { app.working = steps || []; };
+    const workingGrouped = () => app.working.some(s => s && Array.isArray(s.steps));
+    const groupMasked = gr => gr.group !== undefined ? app.masked(gr.group) : app.masked();
+    const stepsHtml = steps => '<ol class="wk">' + steps.map(s =>
+      '<li><div class="wt">' + s.title + '</div>' +
+      (s.formula ? '<div class="wf">' + s.formula + '</div>' : '') +
+      (s.sub ? '<div class="ws">= ' + s.sub + '</div>' : '') +
+      (s.result ? '<div class="wr">= ' + s.result + '</div>' : '') +
+      (s.note ? '<div class="note">' + s.note + '</div>' : '') +
+      (s.source ? '<div class="wsrc">Source: ' + esc(s.source) + '</div>' : '') + '</li>').join('') + '</ol>';
+    function renderWorking() {
+      const body = app.el.working;
+      if (workingGrouped()) {
+        if (app.hasInvalid()) { body.innerHTML = '<p class="note" style="padding:8px 10px">' + esc(app.invalidReason()) + '.</p>'; return; }
+        body.innerHTML = app.working.map(gr => '<h4 class="wk-h">' + gr.heading + '</h4>' +
+          (groupMasked(gr) ? '<p class="note" style="padding:4px 10px 8px">Hidden until you check your prediction.</p>'
+            : gr.steps.length ? stepsHtml(gr.steps) : '<p class="note" style="padding:4px 10px 8px">Nothing to show yet.</p>')).join('');
+        return;
+      }
+      if (app.masked()) { body.innerHTML = '<p class="note" style="padding:8px 10px">Hidden until you check your prediction.</p>'; return; }
+      if (app.hasInvalid()) { body.innerHTML = '<p class="note" style="padding:8px 10px">' + esc(app.invalidReason()) + '.</p>'; return; }
+      if (!app.working.length) { body.innerHTML = '<p class="note" style="padding:8px 10px">Nothing to show yet.</p>'; return; }
+      body.innerHTML = stepsHtml(app.working);
+    }
+
+    /* =================================================================
+       RENDER CYCLE
+       ================================================================= */
+    let saveT = 0;
+    function saveState() { clearTimeout(saveT); saveT = setTimeout(() => S.set('state', { schemaVersion: cfg.schemaVersion, state: cfg.getState ? cfg.getState(app) : app.state }), 250); }
+    function saveSettings() { S.set('settings', app.settings); }
+    function saveLog() { S.set('log', app.log); }
+    function render() {
+      syncModes(); syncTabs(); syncChallenge();
+      app.fields.forEach(f => f.sync());
+      cfg.render(app);
+      renderPf();
+      renderWorking();
+    }
+    app.render = render;
+    // Call after any input change (00 §4.4: hides results and clears predictions).
+    app.changed = (opts) => {
+      if (!(opts && opts.keepPrediction) && pfOn()) clearPrediction();
+      saveState(); render();
+    };
+    app.refreshFields = () => { app.fields.forEach(f => f.reset()); };
+
+    /* =================================================================
+       SAVE / LOAD / IMPORT (00 §6)
+       ================================================================= */
+    function context() { if (cfg.context) return cfg.context(app); const c = app.challenge(); return c ? c.id : 'sandbox'; }
+    function contextLabel() { if (cfg.contextLabel) return cfg.contextLabel(app); const c = app.challenge(); return c ? 'Challenge ' + c.id : 'Sandbox'; }
+    app.fileName = ext => exportName({ student: app.student(), tool: cfg.slug, context: context(), dateISO: localDateISO(), ext });
+    $('shSave').addEventListener('click', () => {
+      const f = SC.makeDesignFile({ tool: cfg.tool, toolVersion: cfg.version, schemaVersion: cfg.schemaVersion }, cfg.getState ? cfg.getState(app) : app.state);
+      f.student = app.student();
+      download(app.fileName('json'), JSON.stringify(f, null, 2), 'application/json');
+      app.toast('Saved ' + app.fileName('json'));
+    });
+    $('shLoad').addEventListener('click', () => app.openFile());
+    app.openFile = () => { $('shFile').value = ''; $('shFile').click(); };
+    $('shFile').addEventListener('change', e => { const fs = e.target.files; if (fs.length) { if (cfg.onFiles) readFiles(fs); else readFile(fs[0]); } });
+    document.addEventListener('dragover', e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); });
+    document.addEventListener('drop', e => {
+      if (!e.dataTransfer || !e.dataTransfer.files.length) return;
+      e.preventDefault();
+      if (cfg.onFiles) readFiles(e.dataTransfer.files); else readFile(e.dataTransfer.files[0]);
+    });
+    // cfg.onFiles(app, [{ name, text, error }]): a tool that takes many files at once
+    // (the Collector) gets every file except saved design files, which the shell
+    // restores as usual. A file that can't be read has text null and an error.
+    function readFiles(list) {
+      return Promise.all([...list].map(f => new Promise(res => {
+        const r = new FileReader();
+        r.onload = () => res({ name: f.name, text: String(r.result), error: null });
+        r.onerror = () => res({ name: f.name, text: null, error: 'the file could not be read' });
+        r.readAsText(f);
+      }))).then(files => {
+        const rest = files.filter(f => {
+          if (f.text !== null && !/\.csv$/i.test(f.name) && SC.kindOf(f.text) === 'design') { app.loadText(f.text, f.name); return false; }
+          return true;
+        });
+        if (rest.length) cfg.onFiles(app, rest);
+      });
+    }
+    app.readFiles = readFiles;
+    function readFile(file) {
+      const r = new FileReader();
+      r.onload = () => app.loadText(String(r.result), file.name);
+      r.onerror = () => app.toast('That file could not be read.', 6000);
+      r.readAsText(file);
+    }
+    app.loadText = (text, name) => {
+      try {
+        const kind = /\.csv$/i.test(name || '') ? 'prediction-log' : SC.kindOf(text);
+        if (kind === 'design') {
+          const res = SC.readDesignFile(text, { tool: cfg.tool, schemaVersion: cfg.schemaVersion, migrate: cfg.migrate });
+          app.state = Object.assign(cfg.defaultState(), res.value.state);
+          if (cfg.afterLoad) cfg.afterLoad(app);
+          app.invalid = {};
+          clearPrediction(); app.refreshFields(); saveState(); render();
+          app.toast(res.warnings.length ? res.warnings.join(' ') : 'Loaded ' + (name || 'design') + '.', res.warnings.length ? 8000 : 3500);
+          return { ok: true, warnings: res.warnings };
+        }
+        if (kind === 'prediction-log') {
+          const res = PL.parseFile(name || 'log.json', text);
+          const d = PL.dedupe(app.log.concat(res.records));
+          const added = d.records.length - app.log.length;
+          app.log = d.records; saveLog();
+          app.toast('Added ' + added + ' prediction record' + (added === 1 ? '' : 's') + ' to your log.' + (res.warnings.length ? ' Note: ' + res.warnings.join(' ') : ''), 6000);
+          return { ok: true };
+        }
+        if (kind && cfg.imports && cfg.imports[kind]) { cfg.imports[kind](app, text, name); return { ok: true }; }
+        throw new Error(kind ? 'The ' + cfg.tool + ' cannot open a ' + kind + ' file.' : 'This file is not a design, import or prediction log this tool can read.');
+      } catch (err) {
+        app.toast(err.message, 8000);
+        return { ok: false, error: err.message };
+      }
+    };
+    app.download = download;
+
+    /* =================================================================
+       EXPORT IMAGE (00 §6): 2× PNG, ink on paper, caption strip
+       ================================================================= */
+    function drawingForExport() { return app.withLight(() => cfg.drawing(app, { export: true })); }
+    function captionText() {
+      return (cfg.nameField === false ? '' : 'Name: ' + (app.student() || 'unnamed') + '   ·   ') + cfg.tool + '   ·   ' + contextLabel() + '   ·   ' + localDateISO();
+    }
+    app.exportImage = () => new Promise((resolve, reject) => {
+      const d = drawingForExport();
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const scale = 2, capH = 40, W = d.width, H = d.height + capH;
+          const c = document.createElement('canvas'); c.width = W * scale; c.height = H * scale;
+          const x = c.getContext('2d'); x.scale(scale, scale);
+          x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
+          x.drawImage(img, 0, 0, d.width, d.height);
+          x.strokeStyle = '#23272C'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(0, d.height + 0.75); x.lineTo(W, d.height + 0.75); x.stroke();
+          x.fillStyle = '#23272C'; x.font = '600 13px "Avenir Next","Segoe UI",sans-serif'; x.textBaseline = 'middle';
+          x.fillText(captionText(), 12, d.height + capH / 2);
+          c.toBlob(blob => { download(app.fileName('png'), blob); resolve({ width: c.width, height: c.height }); }, 'image/png');
+        } catch (e) { app.toast('The image could not be exported in this browser.', 6000); reject(e); }
+      };
+      img.onerror = () => { app.toast('The image could not be exported in this browser.', 6000); reject(new Error('svg load failed')); };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(d.svg);
+    });
+    $('shPng').addEventListener('click', () => { app.exportImage().catch(() => { }); });
+
+    /* =================================================================
+       REPORT (00 §6): printable page
+       ================================================================= */
+    app.buildReport = () => {
+      const d = drawingForExport();
+      const r = cfg.report(app);
+      const rows = list => list.map(([k, v]) => '<tr><th style="width:45%">' + k + '</th><td class="mono">' + v + '</td></tr>').join('');
+      const session = app.log.filter(x => Date.parse(x.timestamp) >= app.sessionStart - 1000);
+      const wkHead = '<tr class="hd"><th>#</th><th>Step</th><th>Formula</th><th>With numbers</th><th>Result</th><th>Source</th></tr>';
+      const wkRows = steps => steps.map((s, i) => '<tr><td>' + (i + 1) + '</td><td>' + s.title + '</td><td class="mono">' + (s.formula || '') + '</td><td class="mono">' + (s.sub || '') + '</td><td class="mono">' + (s.result || '') + '</td><td>' + esc(s.source || '') + '</td></tr>').join('');
+      const wk = workingGrouped()
+        ? app.working.map(gr => '<h3 class="wk-h">' + gr.heading + '</h3>' + (groupMasked(gr) ? '<p>Hidden until the prediction is checked.</p>' : gr.steps.length ? '<table>' + wkHead + wkRows(gr.steps) + '</table>' : '<p>Nothing to show.</p>')).join('')
+        : app.masked() ? '<p>Hidden until the prediction is checked.</p>' : app.working.length ? '<table>' + wkHead + wkRows(app.working) + '</table>' : '<p>Nothing to show.</p>';
+      const hist = session.length ? '<table><tr class="hd"><th>Time</th><th>Quantity</th><th>Predicted</th><th>Model</th><th>Difference</th><th>Attempt</th></tr>' +
+        session.map(x => '<tr><td>' + esc(x.timestamp.slice(11, 19)) + '</td><td>' + esc(x.quantity) + '</td><td class="mono">' + fmtSig(x.predicted, app.settings.sig) + ' ' + esc(x.unit) + '</td><td class="mono">' + (x.model === null ? 'not defined' : fmtSig(x.model, app.settings.sig) + ' ' + esc(x.unit)) + '</td><td class="mono">' + fmtPct(x.pctPredVsModel, app.settings.sig) + '</td><td>' + x.attempt + '</td></tr>').join('') + '</table>' : '<p>No predictions checked this session.</p>';
+      const sources = (cfg.help && cfg.help.sources || []).map(s => '<li>' + esc(s.title) + (s.url ? ': ' + esc(s.url) : '') + '</li>').join('');
+      const teacherTool = cfg.predictFirst === false;
+      report.innerHTML = '<div class="rb"><h1>' + esc(cfg.tool) + ' — Report</h1><div class="sub">' + esc(cfg.subtitle || '') + '</div>' +
+        '<table><tr class="hd"><th>Name</th><th>Date</th><th>Mode</th><th>Tool version</th></tr><tr><td>' + esc(teacherTool && cfg.nameField === false ? '—' : app.student() || 'unnamed') + '</td><td>' + localDateISO() + '</td><td>' + esc(contextLabel()) + '</td><td>' + esc(cfg.version) + '</td></tr></table>' +
+        // report().lead: sections printed first, before the drawing (the Conveyor Designer's requirements).
+        (r.lead || []).map(x => '<h2>' + esc(x.title) + '</h2>' + x.html).join('') +
+        '<div class="fig">' + d.svg + '</div>' +
+        '<h2>Inputs</h2><table>' + rows(r.inputs) + '</table>' +
+        '<h2>Results</h2><table>' + rows(r.outputs) + '</table>' +
+        (r.notes && r.notes.length ? '<h2>Notes</h2><ul>' + r.notes.map(n => '<li>' + n + '</li>').join('') + '</ul>' : '') +
+        (r.sections || []).map(x => '<h2>' + esc(x.title) + '</h2>' + x.html).join('') +
+        '<h2>Show the working</h2>' + wk +
+        (teacherTool ? '' : '<h2>Prediction history (this session)</h2>' + hist) +
+        '<h2>Sources</h2><ol>' + sources + '</ol>' +
+        (teacherTool ? '' : '<div class="sig"><span>Student signature</span><span>Teacher check</span></div>') + '</div>';
+      return report;
+    };
+    $('shReport').addEventListener('click', () => {
+      app.buildReport();
+      const prev = document.title;
+      document.title = app.fileName('');
+      document.title = document.title.replace(/\.$/, '');
+      const restore = () => { document.title = prev; window.removeEventListener('afterprint', restore); };
+      window.addEventListener('afterprint', restore);
+      window.print();
+      setTimeout(restore, 1500);
+    });
+
+    /* =================================================================
+       PREDICTION LOG DIALOG (07 §3.3)
+       ================================================================= */
+    function renderLog() {
+      const b = logD.body, sig = app.settings.sig;
+      const recs = app.log.map((r, i) => ({ r, i })).reverse();
+      b.innerHTML = '<p>Every Check in predict-first mode adds a row here. You can add a measured lab value and a note to any row. Records stay in this browser until you clear them in Settings.</p>' +
+        '<div class="btnrow"><button class="btn" id="shLogJson">Export JSON</button><button class="btn" id="shLogCsv">Export CSV</button><button class="btn" id="shLogCopy">Copy last row</button></div>' +
+        (recs.length ? '<div style="overflow-x:auto"><table><thead><tr><th>Time</th><th>Problem</th><th>Quantity</th><th>Predicted</th><th>Model</th><th>Diff.</th><th>Try</th><th>Measured</th><th>Note</th></tr></thead><tbody>' +
+          recs.map(({ r, i }) => '<tr><td>' + esc(r.timestamp.slice(5, 16).replace('T', ' ')) + '</td><td>' + esc(r.problemId) + '</td><td>' + esc(r.quantity) + '</td><td>' + fmtSig(r.predicted, sig) + ' ' + esc(r.unit) + '</td><td>' + (r.model === null ? 'not defined' : fmtSig(r.model, sig)) + '</td><td>' + fmtPct(r.pctPredVsModel, sig) + '</td><td>' + r.attempt + '</td>' +
+            '<td><input data-i="' + i + '" data-f="measured" inputmode="decimal" aria-label="Measured value for ' + esc(r.quantity) + '" value="' + (r.measured === null ? '' : r.measured) + '"></td>' +
+            '<td><input data-i="' + i + '" data-f="note" aria-label="Note for ' + esc(r.quantity) + '" maxlength="200" value="' + esc(r.note) + '"></td></tr>').join('') + '</tbody></table></div>'
+          : '<p class="note">No predictions yet. Turn on Predict first, enter a prediction and press Check.</p>');
+      b.querySelectorAll('input[data-i]').forEach(inp => inp.addEventListener('change', () => {
+        const i = +inp.dataset.i, f = inp.dataset.f;
+        if (f === 'measured') { const v = inp.value.trim() === '' ? null : parseNumber(inp.value); if (v !== null && !isNum(v)) { app.toast('Measured value must be a number.'); return; } app.log[i] = PL.annotate(app.log[i], { measured: v }); }
+        else app.log[i] = PL.annotate(app.log[i], { note: inp.value });
+        saveLog(); renderLog();
+      }));
+      const logName = ext => exportName({ student: app.student(), tool: cfg.slug, context: 'prediction-log', dateISO: localDateISO(), ext });
+      $('shLogJson').addEventListener('click', () => download(logName('json'), JSON.stringify(PL.toJSON(app.log), null, 2), 'application/json'));
+      $('shLogCsv').addEventListener('click', () => download(logName('csv'), PL.toCSV(app.log), 'text/csv;charset=utf-8'));
+      $('shLogCopy').addEventListener('click', async () => {
+        if (!app.log.length) { app.toast('The log is empty.'); return; }
+        const ok = await copyText(PL.toTSVRow(app.log[app.log.length - 1]));
+        app.toast(ok ? 'Copied the last row. Paste it into your class spreadsheet.' : 'Copy did not work in this browser. Use Export CSV instead.');
+      });
+    }
+    $('shLog').addEventListener('click', () => { renderLog(); logD.dlg.showModal(); });
+
+    /* =================================================================
+       SETTINGS, CLEAR MY DATA
+       ================================================================= */
+    function renderSettings() {
+      const b = setD.body;
+      b.innerHTML = '<h3>Numbers</h3><div class="fld"><label for="shSig">Significant figures shown</label><span class="ctl"><select id="shSig"><option value="3">3</option><option value="4">4</option></select></span></div>' +
+        '<p class="note">Calculations are never rounded; this only changes the display.</p>' +
+        '<h3>Your class</h3><div class="fld"><label for="shTeam">Team (optional)</label><span class="ctl"><input type="text" id="shTeam" maxlength="40" style="text-align:left"></span></div>' +
+        '<div class="fld"><label for="shPeriod">Class period (optional)</label><span class="ctl"><input type="text" id="shPeriod" maxlength="20" style="text-align:left"></span></div>' +
+        '<div id="shSetExtra"></div>' +
+        (CH ? '<h3>Challenges (teacher)</h3><p class="note">Paste a challenge list (JSON) to replace the built-in examples. Students paste the same list into their copy. The help panel shows the format.</p>' +
+          '<textarea id="shChText" rows="7" spellcheck="false" aria-describedby="shChMsg"></textarea>' +
+          '<div class="btnrow"><button class="btn" id="shChSave" type="button">Use this list</button><button class="btn" id="shChReset" type="button">Use the built-in examples</button></div>' +
+          '<p class="note" id="shChMsg" role="status"></p>' : '') +
+        '<h3>Your data</h3><p>Your name, current design, predictions and settings are kept in this browser only.</p>' +
+        '<div class="btnrow"><button class="btn danger" id="shClear">Clear my data</button></div><p class="note" id="shClearMsg"></p>';
+      $('shSig').value = String(app.settings.sig);
+      $('shSig').addEventListener('change', () => { app.settings.sig = +$('shSig').value; saveSettings(); render(); });
+      $('shTeam').value = app.settings.team; $('shPeriod').value = app.settings.classPeriod;
+      $('shTeam').addEventListener('input', () => { app.settings.team = $('shTeam').value; saveSettings(); });
+      $('shPeriod').addEventListener('input', () => { app.settings.classPeriod = $('shPeriod').value; saveSettings(); });
+      if (cfg.settingsExtra) cfg.settingsExtra(app, $('shSetExtra'));
+      if (CH) {
+        const custom = S.get('challenges', null);
+        $('shChText').value = JSON.stringify(custom || { tool: cfg.tool, schemaVersion: CHALLENGE_VERSION, challenges: CH.builtIn || [] }, null, 2);
+        $('shChMsg').textContent = custom ? 'Using your challenge list.' : 'Using the built-in examples.';
+        $('shChSave').addEventListener('click', () => {
+          try {
+            const res = readChallengeList($('shChText').value, cfg.tool);
+            S.set('challenges', JSON.parse($('shChText').value));
+            $('shChMsg').textContent = 'Saved ' + res.value.challenges.length + ' challenge' + (res.value.challenges.length === 1 ? '' : 's') + '.' + (res.warnings.length ? ' ' + res.warnings.join(' ') : '');
+            if (app.settings.challengeId && !app.challengeList().some(c => c.id === app.settings.challengeId)) { app.settings.challengeId = null; saveSettings(); }
+            render();
+          } catch (e) { $('shChMsg').textContent = e.message; }
+        });
+        $('shChReset').addEventListener('click', () => {
+          S.del('challenges'); app.settings.challengeId = null; saveSettings();
+          $('shChText').value = JSON.stringify({ tool: cfg.tool, schemaVersion: CHALLENGE_VERSION, challenges: CH.builtIn || [] }, null, 2);
+          $('shChMsg').textContent = 'Using the built-in examples.'; render();
+        });
+      }
+      let armed = false;
+      $('shClear').addEventListener('click', () => {
+        if (!armed) { armed = true; $('shClear').textContent = 'Click again to clear everything'; $('shClearMsg').textContent = 'This removes your name, design, prediction log and settings from this browser.'; return; }
+        app.clearData(); setD.dlg.close();
+      });
+    }
+    app.clearData = () => {
+      clearTimeout(saveT);                      // a pending autosave must not write the old design back
+      S.clearAll(); G.del('name');
+      app.settings = Object.assign({ sig: 3, team: '', classPeriod: '', predictFirst: false }, cfg.defaultSettings || {});
+      app.log = []; app.state = cfg.defaultState(); nameEl.value = ''; app.invalid = {};
+      if (cfg.afterLoad) cfg.afterLoad(app);
+      clearPrediction(); app.refreshFields(); render();
+      app.toast('Your data was cleared from this browser.');
+    };
+    app.saveSettings = saveSettings;
+    $('shSettings').addEventListener('click', () => { renderSettings(); setD.dlg.showModal(); });
+
+    /* =================================================================
+       HELP (00 §2)
+       ================================================================= */
+    function renderHelp() {
+      const hp = cfg.help || {};
+      const keys = (cfg.tabs ? [['← / → on the tabs', 'Switch view']] : []).concat(hp.keys || []).concat([['?', 'Open this help'], ['Esc', 'Close a dialog'], ['↑ / ↓ in a number box', 'Step the value (hold Shift for ×10)']]).concat(cfg.predictFirst === false ? [] : [['Enter in a prediction box', 'Check']]);
+      const pfHelp = cfg.predictFirst === false ? '' :
+        '<h3>Predict first</h3><p>Turn on <strong>Predict first</strong> in the header. The results you are asked to predict are hidden. Type a prediction for each one and press <strong>Check</strong>. The tool shows how far off you were and saves the attempt to your prediction log (<strong>Log</strong> button). Change any input and the results hide again. Within 1% counts as a match and within 5% as close. Open <strong>Show the working</strong> to see each step of the calculation and find where a prediction went wrong.</p>';
+      const chHelp = !CH ? '' : '<h3>Challenges</h3><p>Choose a challenge from the list in the header. Predict first turns on, and some challenges hide input values or ask for a checked prediction before you run the model. Your teacher can replace the example challenges in Settings.</p>';
+      helpD.body.innerHTML = (hp.html || '') + pfHelp + chHelp +
+        '<h3>Numbers and units</h3><p>Results show 3 significant figures (4 in Settings). The tool never rounds in the middle of a calculation. ' + (hp.units || '') + '</p>' +
+        '<h3>Saving your work</h3><p>Your name, design and predictions are kept in this browser. <strong>Save</strong> downloads a design file, and <strong>Load</strong> opens one (you can also drop a file onto the page). <strong>Export image</strong> downloads a picture of the drawing, and <strong>Report</strong> opens a printable page: choose "Save as PDF" in the print window. Exports always print ink on paper, whichever theme is on screen.</p>' +
+        '<h3>Keyboard</h3><ul>' + keys.map(([k, a]) => '<li><kbd>' + esc(k) + '</kbd> ' + esc(a) + '</li>').join('') + '</ul>' +
+        '<p>Screen readers hear a description of the drawing whenever it changes. With your system\'s reduce motion setting on, animations stop but numbers stay live. Use a laptop, Chromebook or full-size tablet; phone screens are too small for the drawing.</p>' +
+        '<h3>Sources</h3><ol>' + (hp.sources || []).map(s => '<li>' + esc(s.title) + (s.url ? ': <a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.url) + '</a>' : '') + '</li>').join('') + '</ol>' +
+        '<div class="teacher"><h3 style="margin-top:0">Teacher notes</h3>' + (hp.teacher || '') +
+        (cfg.predictFirst === false ? '' : '<p>The prediction log exports as JSON or CSV in the shared Engineered by the Numbers format, so a class set can be merged in the Prediction Log Collector. Nothing is sent anywhere; all data stays in the student\'s browser.</p>') +
+        (CH ? '<p>A challenge list is JSON: <code>{ "tool": "' + esc(cfg.tool) + '", "schemaVersion": 1, "challenges": [ { "id": "XX-1", "title": "…", "brief": "…", "inputs": { … }, "hidden": [ … ], "tolerance": { "match": 1, "close": 5 }, "requirePrediction": true } ] }</code>. Input names and units are the ones in this tool\'s saved design file. Paste it in Settings.</p>' : '') + '</div>' +
+        '<p class="note">' + esc(cfg.tool) + ' version ' + esc(cfg.version) + '.</p>';
+    }
+    app.openHelp = () => { renderHelp(); helpD.dlg.showModal(); };
+    $('shHelp').addEventListener('click', app.openHelp);
+    document.addEventListener('keydown', e => {
+      const t = e.target, typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+      if (e.key === '?' && !typing && !document.querySelector('dialog[open]')) { e.preventDefault(); app.openHelp(); }
+    });
+
+    /* ---------------- go ---------------- */
+    syncTheme();
+    if (cfg.afterLoad) cfg.afterLoad(app);
+    if (cfg.build) cfg.build(app);
+    app.fields.forEach(f => f.revalidate());
+    render();
+    if (typeof window !== 'undefined') window.__app = app;
+    return app;
+  }
+
+  return { create, util, version: '1.2.2' };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = Shell;
+/* END vendor:shell.js */
+/* BEGIN vendor:anim.js */
+// ecosystem/anim.js v1.0.0
+// One animation clock per moving part of a tool (03 block and screw, 04 wheel,
+// 05 boxes). It turns real frames into simulation time and calls the tool's
+// step function, which should work out the state from the simulation time (for
+// example θ(t) for the wheel), so the stop lands on the computed time.
+//   - pauses while the browser tab is hidden, and never jumps more than 0.1 s per frame
+//   - time scale for slow motion (04: 1, ¼, 1/10)
+//   - reduced motion (00 §7): the loop does not run; the tool shows the end state
+//     and keeps its numbers live
+//   - a manual clock for tests: Anim.manual(true) stops every loop, and
+//     anim.advance(seconds) or Anim.advanceAll(seconds) moves time exactly
+const Anim = (function () {
+  'use strict';
+  const all = [];
+  let manualMode = false;
+  const hasWin = typeof window !== 'undefined';
+  const MAX_DT = 0.1;                         // s of real time per frame, at most
+
+  function prefersReduced() {
+    try { return hasWin && !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
+  }
+
+  // opts: { step(dtSim, tSim) -> false to stop, onStop(), onReduced(), scale,
+  //         now(), raf(fn), caf(id), reduced() }
+  function create(opts) {
+    opts = opts || {};
+    const now = opts.now || (() => (hasWin && window.performance ? performance.now() : Date.now()));
+    const raf = opts.raf || (hasWin && window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : (fn => setTimeout(() => fn(now()), 16)));
+    const caf = opts.caf || (hasWin && window.cancelAnimationFrame ? window.cancelAnimationFrame.bind(window) : clearTimeout);
+    const reduced = opts.reduced || prefersReduced;
+    let id = null, last = null;
+    const a = {
+      time: 0, scale: opts.scale || 1, running: false,
+      reduced,
+      // Start (or resume) the loop. Returns false under reduced motion, after calling onReduced.
+      start() {
+        if (a.running) return true;
+        if (reduced()) { if (opts.onReduced) opts.onReduced(); return false; }
+        a.running = true; last = null;
+        if (!manualMode) id = raf(frame);
+        return true;
+      },
+      stop() {
+        if (!a.running) return;
+        a.running = false; if (id !== null) caf(id); id = null; last = null;
+        if (opts.onStop) opts.onStop();
+      },
+      reset() { a.stop(); a.time = 0; },
+      setScale(s) { a.scale = s > 0 ? s : 1; },
+      // Move simulation time by `simSeconds` in steps no longer than one 60 Hz frame.
+      advance(simSeconds) {
+        let left = simSeconds;
+        while (a.running && left > 1e-12) {
+          const dt = Math.min(left, 1 / 60);
+          left -= dt; tick(dt);
+        }
+        return a.time;
+      },
+    };
+    function tick(dtSim) {
+      a.time += dtSim;
+      const go = opts.step ? opts.step(dtSim, a.time) : true;
+      if (go === false) a.stop();
+    }
+    function frame(ts) {
+      id = null;
+      if (!a.running || manualMode) return;
+      const t = typeof ts === 'number' ? ts : now();
+      if (last !== null) tick(Math.min(MAX_DT, Math.max(0, (t - last) / 1000)) * a.scale);
+      last = t;
+      if (a.running && !manualMode) id = raf(frame);
+    }
+    a._resume = () => { if (a.running && id === null && !manualMode) { last = null; id = raf(frame); } };
+    a._pause = () => { if (id !== null) caf(id); id = null; last = null; };
+    all.push(a);
+    return a;
+  }
+
+  if (hasWin && typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => all.forEach(a => document.hidden ? a._pause() : a._resume()));
+  }
+
+  return {
+    create, prefersReduced,
+    all: () => all.slice(),
+    // Tests: take every clock off real time (true) or put it back (false).
+    manual(on) { manualMode = !!on; all.forEach(a => on ? a._pause() : a._resume()); },
+    advanceAll(simSeconds) { all.forEach(a => a.advance(simSeconds)); },
+    isManual: () => manualMode,
+  };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = Anim;
+/* END vendor:anim.js */
+/* BEGIN core */
+// Conveyor Designer core (spec 05). Takes the interface state in display units
+// (kg, m, m/s, mm, N·m, rpm, MPa, degrees) and steps through the design in the
+// unit's order: load and throughput, belt pull, power, drive pulley, motor and
+// ratio (the shared MotorCore, unchanged), belt tensions and slip, pulley-shaft
+// side load and check (the shared BeamCore, unchanged), bearings and the
+// incline hold. It also scores the team's requirements, builds the working,
+// targets, description and the shaft-loads and drive-request files.
+// Pure functions; tested in dev/test.js.
+const ConveyorCore = (function () {
+  'use strict';
+  const MC = typeof MotorCore !== 'undefined' ? MotorCore : require('./vendor/motor-core.js');
+  const BC = typeof BeamCore !== 'undefined' ? BeamCore : require('./vendor/beam-core.js');
+  const G = 9.81;
+  const isNum = v => typeof v === 'number' && isFinite(v);
+  const DEG = Math.PI / 180;
+  const rad = MC.rpmToRad, rpm = MC.radToRpm;
+  // Rounding noise from an exact solver root (1e-14 %) reads as 0.
+  const clean = v => Math.abs(v) < 1e-9 ? 0 : v;
+
+  const SOURCES = {
+    pc: 'PackagingConveyor.com, conveyor engineering calculations',
+    rul: 'Rulmeca, how to calculate conveyor belt tensions',
+    bison: 'BisonConvey, capstan equation',
+    wiki: 'Wikipedia, capstan equation',
+    motor: 'Spec 02 (Motor and Drive Matcher) §3.1–3.4',
+    shaft: 'Spec 01 (Shaft and Beam Workbench) §3.4',
+    vr: 'v = ω r (OpenStax University Physics Vol. 1, 10.8)',
+  };
+
+  function defaultState() {
+    return {
+      mode: 'sandbox', tab: 'requirements',
+      mBox: 1, s: 0.3, v: 0.3, L: 2, H: 0, mb: 0.5, mu: 0.3, SF: 1.5, eta: 1.0, D: 60,
+      Ts: 2, N0: 300, ratioMode: 'solver', ratio: 3.14,
+      muP: 0.3, wrap: 180, T2auto: true, T2: 18.7,
+      Lb: 100, dShaft: 8, Sy: 400,
+      reqs: [], nextReq: 1,
+    };
+  }
+
+  // Field rules (spec 05 §5, 00 §8), in display units. Motor and shaft ranges follow specs 02 and 01.
+  const FIELDS = {
+    mBox: { name: 'Box mass', unit: 'kg', min: 0.01, max: 100 },
+    s: { name: 'Box spacing', unit: 'm', min: 0.05, max: 10 },
+    v: { name: 'Target belt speed', unit: 'm/s', min: 0.01, max: 5 },
+    L: { name: 'Bed length', unit: 'm', min: 0.2, max: 20 },
+    H: { name: 'Lift', unit: 'm', min: 0, max: 20 },
+    mb: { name: 'Belt mass per meter', unit: 'kg/m', min: 0.01, max: 20 },
+    mu: { name: 'Bed friction μ', min: 0.01, max: 1 },
+    SF: { name: 'Service factor', min: 1, max: 3 },
+    eta: { name: 'Drive efficiency η', min: 0.3, max: 1 },
+    D: { name: 'Pulley diameter', unit: 'mm', min: 10, max: 1000 },
+    Ts: { name: 'Stall torque', unit: 'N·m', min: 0.001, max: 500 },
+    N0: { name: 'No-load speed', unit: 'rpm', min: 1, max: 50000 },
+    ratio: { name: 'Ratio', min: 0.1, max: 100 },
+    muP: { name: 'Pulley friction μp', min: 0.05, max: 1 },
+    wrap: { name: 'Wrap angle', unit: '°', min: 90, max: 270 },
+    T2: { name: 'Belt tension setting', unit: 'N', gt: 0, max: 100000 },
+    Lb: { name: 'Bearing span', unit: 'mm', min: 10, max: 2000 },
+    dShaft: { name: 'Shaft diameter', unit: 'mm', min: 1, max: 200 },
+    Sy: { name: 'Yield strength', unit: 'MPa', min: 1, max: 2000 },
+  };
+  // CD-8.
+  const liftCheck = (H, L) => H > L ? 'Lift cannot be more than the bed length.' : null;
+
+  /* ------------------------------------------------------------ steps §3.1–3.4 */
+  function load(s) {
+    const mp = s.mBox / s.s;
+    const ratio = s.L / s.s, fl = Math.floor(ratio + 1e-9);
+    const divides = Math.abs(ratio - Math.round(ratio)) < 1e-9;
+    return { mp, throughput: 60 * s.v / s.s, boxesMax: fl + 1, boxesMin: divides ? fl + 1 : fl, divides };
+  }
+  function beltPull(s, mp) {
+    const fric = s.mu * G * (s.mb + mp) * s.L, lift = mp * G * s.H;
+    return { fric, lift, Te: fric + lift, angle: s.L > 0 ? Math.asin(Math.min(1, s.H / s.L)) : 0 };
+  }
+  function power(s, Te) { const P = Te * s.v; return { P, Pmotor: P * s.SF / s.eta }; }
+  function pulley(s, Te) { const D = s.D / 1000; return { D, Tp: Te * D / 2, Np: 60 * s.v / (Math.PI * D) }; }
+
+  /* ------------------------------------------------------------ motor and ratio §3.5 (MotorCore) */
+  // o: { Tp (N·m), Np (rpm), Ts (N·m), N0 (rpm), ratioMode, ratio, eta, D (m), vTarget (m/s) }
+  function drive(o) {
+    const w0 = rad(o.N0), wT = rad(o.Np);
+    const solver = MC.solveRatio({ Ts: o.Ts, w0, k: 1, eta: o.eta, TL: o.Tp, wTarget: wT });
+    const i = o.ratioMode === 'solver' ? (solver.feasible ? solver.iHigh : null) : o.ratio;
+    const out = { solver, i, Pmax: MC.motor({ Ts: o.Ts, w0, k: 1 }).Pmax };
+    if (i === null) { out.reason = 'no ratio reaches the target speed with this motor and load'; return out; }
+    const op = MC.operate({ Ts: o.Ts, w0, k: 1, i, eta: o.eta, TL: o.Tp, r: o.D / 2 });
+    out.op = op;
+    out.Nm = rpm(op.wm); out.Nout = rpm(op.wout);
+    out.vBelt = op.wout * o.D / 2;                      // v = ω r
+    out.speedErr = clean((out.vBelt - o.vTarget) / o.vTarget * 100);
+    if (op.stalled) out.reason = 'the motor stalls: the load needs more than its stall torque at this ratio';
+    return out;
+  }
+
+  /* ------------------------------------------------------------ tensions §3.6 */
+  function tensions(s, Te) {
+    const theta = s.wrap * DEG, ef = Math.exp(s.muP * theta);
+    const T2min = Te / (ef - 1);
+    const T2 = s.T2auto ? 1.3 * T2min : s.T2;
+    const T1 = Te + T2;
+    return { theta, ef, T2min, T2, T1, margin: T2 / T2min, slips: T2 < T2min, TeMax: T2 * (ef - 1) };
+  }
+
+  /* ------------------------------------------------------------ side load, shaft, bearings §3.7 */
+  // The two spans' directions differ by (180° − θ). The tight span leaves the drive pulley toward the
+  // tail (180° on the side view); the slack span turns by the wrap. Their sum gives R and its direction.
+  function sideLoad(T1, T2, theta) {
+    const R = Math.sqrt(T1 * T1 + T2 * T2 - 2 * T1 * T2 * Math.cos(theta));
+    const a2 = 2 * Math.PI - theta;
+    const x = T1 * Math.cos(Math.PI) + T2 * Math.cos(a2), y = T1 * Math.sin(Math.PI) + T2 * Math.sin(a2);
+    let ang = Math.atan2(y, x) / DEG; if (ang < 0) ang += 360;
+    return { R, angleDeg: ang };
+  }
+  // Centred pulley on a shaft between two bearings, through BeamCore unchanged. The drive torque runs
+  // from the coupling at bearing A to the pulley (QUESTIONS Q22 has the direction note).
+  function shaft(R, Tp, s) {
+    const Lb = s.Lb / 1000;
+    const res = BC.analyze({ L: Lb, loads: [{ P: R, a: Lb / 2, label: 'Drive pulley' }], mode: 'shaft', torque: { T: Tp, from: 0, to: Lb / 2 }, d: s.dShaft / 1000, Sy: s.Sy * 1e6, rule: 'tresca' });
+    const c = res.critical;
+    return { Lb, beam: res, M: c ? c.M : null, T: c ? c.T : null, tauMax: c ? c.tauMax : null, n: res.n, RA: res.RA, RB: res.RB, Mformula: R * Lb / 4 };
+  }
+
+  /* ------------------------------------------------------------ the whole design */
+  function design(s) {
+    const ld = load(s), bp = beltPull(s, ld.mp), pw = power(s, bp.Te), pu = pulley(s, bp.Te);
+    const dr = drive({ Tp: pu.Tp, Np: pu.Np, Ts: s.Ts, N0: s.N0, ratioMode: s.ratioMode, ratio: s.ratio, eta: s.eta, D: pu.D, vTarget: s.v });
+    const tn = tensions(s, bp.Te);
+    const sl = sideLoad(tn.T1, tn.T2, tn.theta);
+    const sh = shaft(sl.R, pu.Tp, s);
+    const out = {
+      load: ld, pull: bp, power: pw, pulley: pu, drive: dr, tensions: tn, side: sl, shaft: sh,
+      bearing: sl.R / 2,
+      hold: s.H > 0 ? { backward: ld.mp * G * s.H } : null,
+      throughputActual: isNum(dr.vBelt) ? 60 * dr.vBelt / s.s : null,
+      powerMargin: dr.Pmax / pw.Pmotor,
+    };
+    out.reqs = requirements(s.reqs || [], s, out);
+    return out;
+  }
+
+  /* ------------------------------------------------------------ requirements §4 */
+  const QUANTITIES = {
+    speed: { label: 'Belt speed', unit: 'm/s', cmp: 'within', value: (s, d) => d.drive.vBelt, output: 'loaded belt speed from the chosen ratio' },
+    throughput: { label: 'Throughput', unit: 'boxes/min', cmp: 'atLeast', value: (s, d) => d.throughputActual, output: 'boxes per minute at the loaded belt speed' },
+    boxMass: { label: 'Box mass capacity', unit: 'kg', cmp: 'atLeast', value: s => s.mBox, output: 'box mass used in T_e' },
+    length: { label: 'Length', unit: 'm', cmp: 'atLeast', value: s => s.L, output: 'bed length L' },
+    lift: { label: 'Lift', unit: 'm', cmp: 'atLeast', value: s => s.H, output: 'lift H' },
+    duty: { label: 'Motor duty', unit: '% of stall', cmp: 'atMost', value: (s, d) => d.drive.op ? d.drive.op.pct : null, output: 'motor torque as a percent of stall' },
+    slip: { label: 'Slip margin', unit: '', cmp: 'atLeast', value: (s, d) => d.tensions.margin, output: 'T₂ setting ÷ T₂,min' },
+    shaftN: { label: 'Shaft safety factor', unit: '', cmp: 'atLeast', value: (s, d) => d.shaft.n, output: 'n from the shaft check' },
+    powerMargin: { label: 'Motor power margin', unit: '', cmp: 'atLeast', value: (s, d) => d.powerMargin, output: 'maximum motor power ÷ motor power needed (QUESTIONS Q19)' },
+    custom: { label: 'Custom', unit: '', cmp: 'manual', value: () => null, output: 'checked by the team' },
+  };
+  const CMPS = { within: 'within ±', atLeast: 'at least', atMost: 'at most', manual: 'checked by hand' };
+  function requirements(rows, s, d) {
+    return rows.map(r => {
+      const q = QUANTITIES[r.qty] || QUANTITIES.custom;
+      const cmp = r.qty === 'custom' ? 'manual' : (r.cmp || q.cmp);
+      if (cmp === 'manual') return { row: r, q, cmp, value: null, status: 'manual' };
+      const value = q.value(s, d);
+      if (!isNum(value) || !isNum(r.target)) return { row: r, q, cmp, value: isNum(value) ? value : null, status: 'undefined', reason: isNum(value) ? 'no target' : 'not defined for this design' };
+      let pass;
+      const diff = r.target !== 0 ? clean((value - r.target) / r.target * 100) : null;
+      if (cmp === 'within') pass = diff !== null && Math.abs(diff) <= (isNum(r.tol) ? r.tol : 0) + 1e-9;
+      else if (cmp === 'atLeast') pass = value >= r.target - 1e-12;
+      else pass = value <= r.target + 1e-12;
+      return { row: r, q, cmp, value, diff, status: pass ? 'pass' : 'fail' };
+    });
+  }
+  // The rows in the mockup, as a starting set the team edits.
+  function exampleRequirements(startId) {
+    const ex = [
+      { desc: 'Belt speed', qty: 'speed', cmp: 'within', target: 0.3, tol: 10 },
+      { desc: 'Throughput', qty: 'throughput', cmp: 'atLeast', target: 55 },
+      { desc: 'Motor runs cool', qty: 'duty', cmp: 'atMost', target: 30 },
+      { desc: 'Belt does not slip', qty: 'slip', cmp: 'atLeast', target: 1.2 },
+      { desc: 'Pulley shaft is strong enough', qty: 'shaftN', cmp: 'atLeast', target: 2 },
+      { desc: 'Guards on both nip points', qty: 'custom', cmp: 'manual', target: null },
+    ];
+    return ex.map((r, k) => Object.assign({ id: startId + k, tol: null }, r));
+  }
+
+  /* ------------------------------------------------------------ predict targets (§7) */
+  // One Check per design step (shell groups). Quantity names are fixed in ecosystem/schemas.md.
+  function targets(d) {
+    return [
+      { key: 'Te', group: 'pull', groupLabel: 'Belt pull', quantity: 'belt pull T_e', label: 'Belt pull T<sub>e</sub>', unit: 'N', model: d.pull.Te },
+      { key: 'P', group: 'power', groupLabel: 'Power', quantity: 'belt power P', label: 'Belt power P', unit: 'W', model: d.power.P },
+      { key: 'Np', group: 'pulley', groupLabel: 'Drive pulley', quantity: 'pulley speed N_p', label: 'Pulley speed N<sub>p</sub>', unit: 'rpm', model: d.pulley.Np },
+      { key: 'T2min', group: 'tensions', groupLabel: 'Tensions and slip', quantity: 'minimum slack-side tension T2_min', label: 'T<sub>2,min</sub>', unit: 'N', model: d.tensions.T2min },
+      { key: 'R', group: 'shaft', groupLabel: 'Pulley shaft', quantity: 'shaft side load R', label: 'Side load R', unit: 'N', model: d.side.R },
+      { key: 'n', group: 'shaft', groupLabel: 'Pulley shaft', quantity: 'shaft safety factor n', label: 'Safety factor n', unit: '', model: d.shaft.n },
+    ];
+  }
+
+  /* ------------------------------------------------------------ show the working (00 §5), by step */
+  function working(d, s, f, fu) {
+    const ld = d.load, bp = d.pull, pw = d.power, pu = d.pulley, dr = d.drive, tn = d.tensions, sl = d.side, sh = d.shaft;
+    const groups = [];
+    const pull = [
+      { title: 'Product mass per meter', formula: 'm′_p = m_box / s', sub: fu(s.mBox, 'kg') + ' / ' + fu(s.s, 'm'), result: fu(ld.mp, 'kg/m'), source: SOURCES.pc },
+      { title: 'Throughput', formula: '60 v / s', sub: '60 × ' + fu(s.v, 'm/s') + ' / ' + fu(s.s, 'm'), result: fu(ld.throughput, 'boxes/min'), source: SOURCES.pc },
+      { title: 'Friction part of the belt pull', formula: 'μ g (m′_b + m′_p) L', sub: f(s.mu) + ' × 9.81 m/s² × (' + fu(s.mb, 'kg/m') + ' + ' + fu(ld.mp, 'kg/m') + ') × ' + fu(s.L, 'm'), result: fu(bp.fric, 'N'), source: SOURCES.pc },
+      { title: 'Lift part of the belt pull', formula: 'm′_p g H', sub: fu(ld.mp, 'kg/m') + ' × 9.81 m/s² × ' + fu(s.H, 'm'), result: fu(bp.lift, 'N'), note: s.H > 0 ? 'The friction part uses the full weight, which slightly overestimates friction on an incline: on the safe side.' : '', source: SOURCES.pc },
+      { title: 'Belt pull (effective tension)', formula: 'T_e = μ g (m′_b + m′_p) L + m′_p g H', sub: fu(bp.fric, 'N') + ' + ' + fu(bp.lift, 'N'), result: fu(bp.Te, 'N'), note: 'Belt pull does not depend on belt speed.', source: SOURCES.pc },
+    ];
+    if (d.hold) pull.push({ title: 'Backward pull with the power off', formula: 'm′_p g H', sub: fu(ld.mp, 'kg/m') + ' × 9.81 m/s² × ' + fu(s.H, 'm'), result: fu(d.hold.backward, 'N'), note: 'On an incline the load can drive the belt backward. Check whether the motor and gearbox hold, or add a brake or holding feature.', source: SOURCES.pc });
+    groups.push({ heading: 'Load and belt pull', group: 'pull', steps: pull });
+    groups.push({ heading: 'Power', group: 'power', steps: [
+      { title: 'Belt power', formula: 'P = T_e v', sub: fu(bp.Te, 'N') + ' × ' + fu(s.v, 'm/s'), result: fu(pw.P, 'W'), source: SOURCES.rul },
+      { title: 'Motor power needed', formula: 'P × service factor ÷ η', sub: fu(pw.P, 'W') + ' × ' + f(s.SF) + ' ÷ ' + f(s.eta), result: fu(pw.Pmotor, 'W'), source: SOURCES.pc },
+    ] });
+    groups.push({ heading: 'Drive pulley', group: 'pulley', steps: [
+      { title: 'Pulley torque', formula: 'T_p = T_e D / 2', sub: fu(bp.Te, 'N') + ' × ' + fu(s.D, 'mm') + ' / 2', result: fu(pu.Tp, 'N·m'), source: SOURCES.rul },
+      { title: 'Pulley speed', formula: 'N_p = 60 v / (π D)', sub: '60 × ' + fu(s.v, 'm/s') + ' / (π × ' + fu(s.D, 'mm') + ')', result: fu(pu.Np, 'rpm'), source: SOURCES.vr },
+    ] });
+    const mot = [];
+    const sv = dr.solver;
+    mot.push({ title: 'Ratio for the target speed under load', formula: 'ω_out i² − ω₀ i + ω₀ T_L / (η T_s) = 0', sub: f(sv.a) + ' i² − ' + f(-sv.b) + ' i + ' + f(sv.c) + ' = 0', result: sv.feasible ? 'i = ' + f(sv.iHigh) + (sv.iLow ? ' or ' + f(sv.iLow) : '') : 'no real root', note: sv.feasible ? 'The larger root keeps the motor below half its stall torque.' : 'No ratio reaches the target speed with this motor and load.', source: SOURCES.motor });
+    if (dr.op) {
+      const op = dr.op;
+      mot.push({ title: 'Motor torque at the chosen ratio', formula: 'T_m = T_L / (i η)', sub: fu(pu.Tp, 'N·m') + ' / (' + f(dr.i) + ' × ' + f(s.eta) + ')', result: fu(op.Tm, 'N·m') + ' = ' + fu(op.pct, '% of stall'), note: 'Duty band: ' + op.band + '.', source: SOURCES.motor });
+      mot.push({ title: 'Loaded speeds', formula: 'N_m = N₀ (1 − T_m/T_s),  N_out = N_m / i', sub: fu(s.N0, 'rpm') + ' × (1 − ' + f(op.Tm) + ' / ' + f(s.Ts) + '),  ÷ ' + f(dr.i), result: fu(dr.Nm, 'rpm') + ', ' + fu(dr.Nout, 'rpm'), source: SOURCES.motor });
+      mot.push({ title: 'Loaded belt speed', formula: 'v = N_out π D / 60', sub: fu(dr.Nout, 'rpm') + ' × π × ' + fu(s.D, 'mm') + ' / 60', result: fu(dr.vBelt, 'm/s') + ' (' + U3pct(dr.speedErr) + ' against ' + fu(s.v, 'm/s') + ')', source: SOURCES.vr });
+    }
+    mot.push({ title: 'Motor power margin', formula: '(T_s ω₀ / 4) ÷ motor power needed', sub: fu(dr.Pmax, 'W') + ' ÷ ' + fu(pw.Pmotor, 'W'), result: f(d.powerMargin), note: 'Maximum motor power is at half the stall torque (QUESTIONS Q19).', source: SOURCES.motor });
+    groups.push({ heading: 'Motor and ratio', group: 'pulley', steps: mot });
+    groups.push({ heading: 'Tensions and slip', group: 'tensions', steps: [
+      { title: 'Capstan factor', formula: 'e^(μ_p θ)', sub: 'e^(' + f(s.muP) + ' × ' + f(tn.theta) + ' rad)', result: f(tn.ef), note: 'θ in radians: ' + f(s.wrap) + '° = ' + f(tn.theta) + ' rad.', source: SOURCES.wiki },
+      { title: 'Minimum slack-side tension', formula: 'T₂,min = T_e / (e^(μ_p θ) − 1)', sub: fu(bp.Te, 'N') + ' / (' + f(tn.ef) + ' − 1)', result: fu(tn.T2min, 'N'), source: SOURCES.bison },
+      { title: 'Your belt tension setting', formula: s.T2auto ? 'T₂ = 1.3 × T₂,min' : 'T₂ (set by the team)', sub: s.T2auto ? '1.3 × ' + fu(tn.T2min, 'N') : '', result: fu(tn.T2, 'N'), source: SOURCES.rul },
+      { title: 'Tight-side tension', formula: 'T₁ = T_e + T₂', sub: fu(bp.Te, 'N') + ' + ' + fu(tn.T2, 'N'), result: fu(tn.T1, 'N'), source: SOURCES.rul },
+      { title: 'Slip margin', formula: 'T₂ / T₂,min', sub: fu(tn.T2, 'N') + ' / ' + fu(tn.T2min, 'N'), result: f(tn.margin), note: tn.slips ? 'Below 1: the belt will slip on the drive pulley.' : '', source: SOURCES.bison },
+    ] });
+    groups.push({ heading: 'Pulley shaft and bearings', group: 'shaft', steps: [
+      { title: 'Side load on the pulley shaft', formula: 'R = √(T₁² + T₂² − 2 T₁ T₂ cos θ)', sub: '√(' + f(tn.T1) + '² + ' + f(tn.T2) + '² − 2 × ' + f(tn.T1) + ' × ' + f(tn.T2) + ' × cos ' + f(s.wrap) + '°)', result: fu(sl.R, 'N'), note: s.wrap === 180 ? 'For θ = 180° this is T₁ + T₂.' : '', source: SOURCES.rul },
+      { title: 'Bending moment, pulley centred', formula: 'M = R L_b / 4', sub: fu(sl.R, 'N') + ' × ' + fu(s.Lb, 'mm') + ' / 4', result: fu(sh.Mformula, 'N·m'), source: SOURCES.shaft },
+      { title: 'Largest shear stress (Tresca)', formula: 'τ_max = (16 / (π d³)) √(M² + T²)', sub: '16 / (π × (' + fu(s.dShaft, 'mm') + ')³) × √(' + f(sh.M) + '² + ' + f(pu.Tp) + '²)', result: fu(sh.tauMax / 1e6, 'MPa'), source: SOURCES.shaft },
+      { title: 'Safety factor', formula: 'n = S_y / (2 τ_max)', sub: fu(s.Sy, 'MPa') + ' / (2 × ' + fu(sh.tauMax / 1e6, 'MPa') + ')', result: f(sh.n), note: 'The yield strength is a placeholder until the team enters a datasheet value.', source: SOURCES.shaft },
+      { title: 'Bearing loads', formula: 'R / 2 each', sub: fu(sl.R, 'N') + ' / 2', result: fu(d.bearing, 'N') + ' each', source: SOURCES.shaft },
+    ] });
+    return groups;
+  }
+  const U3pct = p => (isNum(p) ? (p > 0 ? '+' : p < 0 ? '−' : '') + Math.abs(p).toFixed(1) + '%' : 'not defined');
+
+  /* ------------------------------------------------------------ files */
+  function shaftLoads(d) {
+    return { label: 'Drive pulley', magnitude: d.side.R, angleDeg: d.side.angleDeg, torque: d.pulley.Tp };
+  }
+  function driveRequest(d, s) {
+    return {
+      loadTorque: d.pulley.Tp, targetSpeed: d.pulley.Np,
+      stages: isNum(d.drive.i) ? [{ ratio: d.drive.i, efficiency: s.eta }] : undefined,
+      motor: { label: 'Team motor', stallTorque: s.Ts, noLoadSpeed: s.N0, count: 1 },
+      note: 'Capstone conveyor drive',
+    };
+  }
+  // A drive-result from the Motor and Drive Matcher: take its motor and overall ratio and efficiency.
+  function applyDriveResult(s, res) {
+    const v = res.value, notes = [];
+    if (v.motor && v.motor.stallTorque > 0 && v.motor.noLoadSpeed > 0) {
+      const k = Math.max(1, Math.round(v.motor.count || 1));
+      s.Ts = v.motor.stallTorque * k; s.N0 = v.motor.noLoadSpeed;
+      if (k > 1) notes.push('The result uses ' + k + ' motors in parallel; the Conveyor Designer models them as one motor with ' + k + ' times the stall torque.');
+    }
+    s.ratioMode = 'hand'; s.ratio = Number(Number(v.ratio).toPrecision(6));
+    if (isNum(v.efficiency)) { const e = Math.min(1, Math.max(0.3, v.efficiency)); if (e !== v.efficiency) notes.push('The drive efficiency was kept within 0.3 to 1.'); s.eta = e; }
+    return notes;
+  }
+
+  function describe(d, s, fu, masked) {
+    let t = 'Side view of a ' + fu(s.L, 'm') + ' slider-bed conveyor' + (s.H > 0 ? ' rising ' + fu(s.H, 'm') : '') + ', boxes of ' + fu(s.mBox, 'kg') + ' every ' + fu(s.s, 'm') + ', drive pulley ' + fu(s.D, 'mm') + ' at the head. ';
+    if (!masked) {
+      t += 'Belt pull ' + fu(d.pull.Te, 'N') + '. ';
+      if (isNum(d.drive.vBelt)) t += 'Loaded belt speed ' + fu(d.drive.vBelt, 'm/s') + '. ';
+      t += 'Tight side ' + fu(d.tensions.T1, 'N') + ', slack side ' + fu(d.tensions.T2, 'N') + (d.tensions.slips ? ': the belt will slip. ' : '. ');
+      t += 'Side load on the pulley shaft ' + fu(d.side.R, 'N') + '.';
+    }
+    const failing = d.reqs.filter(r => r.status === 'fail').length;
+    if (d.reqs.length) t += ' Requirements: ' + d.reqs.filter(r => r.status === 'pass').length + ' pass, ' + failing + ' fail.';
+    return t;
+  }
+
+  function snapshot(s) {
+    return {
+      values: { mBox: s.mBox, s: s.s, v: s.v, L: s.L, H: s.H, mb: s.mb, mu: s.mu, SF: s.SF, eta: s.eta, D: s.D / 1000, Ts: s.Ts, omega0: rad(s.N0), ratio: s.ratioMode === 'solver' ? 'solver' : s.ratio, muP: s.muP, wrap: s.wrap * DEG, T2: s.T2auto ? 'auto' : s.T2, Lb: s.Lb / 1000, d: s.dShaft / 1000, Sy: s.Sy * 1e6 },
+      units: { mBox: 'kg', s: 'm', v: 'm/s', L: 'm', H: 'm', mb: 'kg/m', mu: '', SF: '', eta: '', D: 'm', Ts: 'N·m', omega0: 'rad/s', ratio: '', muP: '', wrap: 'rad', T2: 'N', Lb: 'm', d: 'm', Sy: 'Pa' },
+    };
+  }
+
+  return { G, SOURCES, FIELDS, QUANTITIES, CMPS, defaultState, liftCheck, load, beltPull, power, pulley, drive, tensions, sideLoad, shaft, design, requirements, exampleRequirements, targets, working, shaftLoads, driveRequest, applyDriveResult, describe, snapshot };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = ConveyorCore;
+/* END core */
+
+/* =====================================================================
+   CONVEYOR DESIGNER — interface (spec 05 §4–7). Requirements tab: the team's
+   numbered requirements. Design tab: the side view and one section per design
+   step, each with its own Check. Design record tab: the calculation package.
+   ===================================================================== */
+(function () {
+  'use strict';
+  const C = ConveyorCore, U = Shell.util, esc = U.esc;
+  const VERSION = '1.0.0';
+  const $ = id => document.getElementById(id);
+  const isNum = v => typeof v === 'number' && isFinite(v);
+  let D = null, APP = null, uid = 0;
+  const n2 = v => (Math.round(v * 100) / 100).toFixed(2);
+
+  const STEPS = [
+    { id: 'pull', title: 'Belt pull', qty: ['boxMass', 'length', 'lift'] },
+    { id: 'power', title: 'Power', qty: [] },
+    { id: 'pulley', title: 'Pulley', qty: [] },
+    { id: 'motor', title: 'Motor and ratio', group: 'pulley', qty: ['speed', 'throughput', 'duty', 'powerMargin'] },
+    { id: 'tensions', title: 'Tensions', qty: ['slip'] },
+    { id: 'shaft', title: 'Shaft and bearings', qty: ['shaftN'] },
+  ];
+  const grpOf = st => st.group || st.id;
+
+  function txt(x, y, s, o) {
+    o = o || {};
+    return '<text x="' + n2(x) + '" y="' + n2(y) + '" font-size="' + (o.size || 12) + '"' + (o.anchor ? ' text-anchor="' + o.anchor + '"' : '') + (o.weight ? ' font-weight="' + o.weight + '"' : '') + ' fill="' + o.fill + '">' + s + '</text>';
+  }
+  function arrow(x1, y1, x2, y2, col, w) {
+    const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
+    if (len < 2) return '';
+    const ux = dx / len, uy = dy / len, hl = Math.min(9, len * 0.45), hw = 4.5, bx = x2 - ux * hl, by = y2 - uy * hl;
+    return '<line x1="' + n2(x1) + '" y1="' + n2(y1) + '" x2="' + n2(bx) + '" y2="' + n2(by) + '" stroke="' + col + '" stroke-width="' + (w || 2) + '"/>' +
+      '<polygon points="' + n2(x2) + ',' + n2(y2) + ' ' + n2(bx - uy * hw) + ',' + n2(by + ux * hw) + ' ' + n2(bx + uy * hw) + ',' + n2(by - ux * hw) + '" fill="' + col + '"/>';
+  }
+  const show = (app, html, g) => app.show(html, g);
+  const hid = (app, g) => app.masked(g);
+
+  /* ------------------------------------------------------------ side view (to scale along the bed) */
+  const W = 680, H = 300, X0 = 70, LPX = 500, Y0 = 170;
+  let boxPhase = 0;                                         // m, how far the boxes have moved
+  function geom(app) {
+    const s = app.state, k = LPX / s.L;                    // px per m along the bed
+    const r = Math.max(8, Math.min(36, s.D / 2000 * k));
+    return { k, r, ang: D.pull.angle };
+  }
+  function boxesSvg(app, p) {
+    const s = app.state, g = geom(app), sp = s.s * g.k, bw = Math.min(30, Math.max(10, sp * 0.45)), bh = Math.min(22, bw * 0.8);
+    let out = '';
+    const ph = ((boxPhase % s.s) + s.s) % s.s * g.k;
+    for (let x = ph; x <= LPX + 1e-6; x += sp) {
+      if (x < 2 || x > LPX - 2) continue;
+      out += '<rect x="' + n2(X0 + x - bw / 2) + '" y="' + n2(Y0 - g.r - bh - 1) + '" width="' + n2(bw) + '" height="' + n2(bh) + '" fill="' + p.inkSoft + '" stroke="' + p.ink + '" stroke-width="1"/>';
+    }
+    return out;
+  }
+  function drawSide(app, p, ex) {
+    const s = app.state, g = geom(app), out = [], tn = D.tensions, sl = D.side;
+    const angDeg = -g.ang * 180 / Math.PI;
+    const xT = X0, xD = X0 + LPX, yTop = Y0 - g.r, yBot = Y0 + g.r;
+    const vTxt = isNum(D.drive.vBelt) ? app.fmtU(D.drive.vBelt, 'm/s') : 'speed not defined';
+    out.push(txt(W / 2, 26, esc('T') + '<tspan font-size="9" dy="3">e</tspan><tspan dy="-3"> = ' + (hid(app, 'pull') ? '?' : esc(app.fmtU(D.pull.Te, 'N'))) + ' · v = ' + (hid(app, 'pulley') ? '?' : esc(vTxt)) + ' · ' + (hid(app, 'pulley') || !isNum(D.throughputActual) ? '?' : esc(app.fmt(D.throughputActual))) + ' boxes/min</tspan>', { anchor: 'middle', weight: 700, size: 14, fill: p.ink }));
+    const c = [];
+    // Belt: top run, return run and the wraps.
+    c.push('<line x1="' + xT + '" y1="' + n2(yTop) + '" x2="' + xD + '" y2="' + n2(yTop) + '" stroke="' + p.ink + '" stroke-width="3"/>');
+    c.push('<line x1="' + xT + '" y1="' + n2(yBot) + '" x2="' + xD + '" y2="' + n2(yBot) + '" stroke="' + p.ink + '" stroke-width="3"/>');
+    c.push('<path d="M ' + xT + ' ' + n2(yTop) + ' A ' + n2(g.r) + ' ' + n2(g.r) + ' 0 0 0 ' + xT + ' ' + n2(yBot) + '" fill="none" stroke="' + p.ink + '" stroke-width="3"/>');
+    c.push('<path d="M ' + xD + ' ' + n2(yTop) + ' A ' + n2(g.r) + ' ' + n2(g.r) + ' 0 0 1 ' + xD + ' ' + n2(yBot) + '" fill="none" stroke="' + p.ink + '" stroke-width="3"/>');
+    [xT, xD].forEach(x => c.push('<circle cx="' + x + '" cy="' + Y0 + '" r="' + n2(g.r - 2) + '" fill="' + p.steel + '" stroke="' + p.ink + '" stroke-width="1.5"/><circle cx="' + x + '" cy="' + Y0 + '" r="2.5" fill="' + p.ink + '"/>'));
+    c.push('<line x1="' + (xT - 10) + '" y1="' + n2(yBot + 8) + '" x2="' + (xD + 10) + '" y2="' + n2(yBot + 8) + '" stroke="' + p.line + '" stroke-width="6"/>');
+    c.push('<g' + (ex ? '' : ' id="cdBoxes"') + '>' + boxesSvg(app, p) + '</g>');
+    // Motor and gearbox at the drive
+    c.push('<rect x="' + (xD + g.r + 8) + '" y="' + (Y0 - 14) + '" width="22" height="28" fill="' + p.steelEdge + '" stroke="' + p.ink + '"/>');
+    c.push('<rect x="' + (xD + g.r + 30) + '" y="' + (Y0 - 18) + '" width="36" height="36" fill="' + p.ink + '"/>' + txt(xD + g.r + 48, Y0 + 5, 'M', { anchor: 'middle', fill: p.paper, weight: 700 }));
+    // Tensions near the drive pulley: both spans pull toward the tail.
+    const mT = hid(app, 'tensions');
+    const yT1 = yTop - 46;
+    c.push(arrow(xD - 30, yT1, xD - 110, yT1, p.fail, 2.2) + txt(xD - 114, yT1 + 4, 'T₁ ' + (mT ? '?' : esc(app.fmtU(tn.T1, 'N'))), { anchor: 'end', fill: p.fail, size: 12 }));
+    c.push(arrow(xD - 30, yBot + 22, xD - 110, yBot + 22, p.dykem, 2.2) + txt(xD - 112, yBot + 26, 'T₂ ' + (mT ? '?' : esc(app.fmtU(tn.T2, 'N'))), { anchor: 'end', fill: p.dykem, size: 12 }));
+    // Side load on the drive pulley shaft
+    const a = sl.angleDeg * Math.PI / 180, Lr = 46;
+    c.push(arrow(xD, Y0, xD + Lr * Math.cos(a), Y0 - Lr * Math.sin(a), p.pass, 2.6));
+    c.push(txt(xD - 40, yBot + 44, 'side load R = ' + (hid(app, 'shaft') ? '?' : esc(app.fmtU(sl.R, 'N'))), { fill: p.pass, size: 12, anchor: 'end' }));
+    c.push(txt(xT, yBot + 44, 'tail', { anchor: 'middle', fill: p.inkSoft, size: 12 }));
+    c.push(txt(xD, yBot + 60, 'drive, D ' + esc(app.fmtU(s.D, 'mm')), { anchor: 'middle', fill: p.inkSoft, size: 12 }));
+    if (tn.slips) c.push('<circle cx="' + xD + '" cy="' + Y0 + '" r="' + n2(g.r + 9) + '" fill="none" stroke="' + p.fail + '" stroke-width="2.5" stroke-dasharray="5 3"/>' + txt(xD, yTop - 34, '⚠ belt will slip', { anchor: 'middle', fill: p.fail, weight: 700, size: 12.5 }));
+    out.push('<g transform="rotate(' + n2(angDeg) + ' ' + xT + ' ' + Y0 + ')">' + c.join('') + '</g>');
+    // Below the drawing
+    let y = 268;
+    if (D.hold) { out.push(txt(16, y, '⚠ Incline: the load can drive the belt backward with the power off' + (hid(app, 'pull') ? '.' : ' (' + esc(app.fmtU(D.hold.backward, 'N')) + ').'), { fill: p.warn, weight: 600, size: 12 })); y += 18; }
+    out.push(txt(16, y, 'Bed ' + esc(app.fmtU(s.L, 'm')) + (s.H > 0 ? ', lift ' + esc(app.fmtU(s.H, 'm')) + ' (' + esc(app.fmt(D.pull.angle * 180 / Math.PI)) + '°)' : ', level') + '. Boxes every ' + esc(app.fmtU(s.s, 'm')) + ', drawn to scale along the bed.', { fill: p.inkSoft, size: 11.5 }));
+    return out.join('');
+  }
+  function draw(app, opts) {
+    const p = app.pal(), ex = !!(opts && opts.export); uid++;
+    const body = D ? drawSide(app, p, ex) : txt(W / 2, 80, 'Fix the highlighted input to see the conveyor.', { anchor: 'middle', fill: p.fail, weight: 600 });
+    return { width: W, height: H, svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" font-family="' + esc(p.fontUi) + '"' + (ex ? '' : ' id="cdSvg" role="img" aria-label="Conveyor side view" aria-describedby="shDesc"') + '><rect width="' + W + '" height="' + H + '" fill="' + p.paper + '"/>' + body + '</svg>' };
+  }
+  // Boxes move at the loaded belt speed, to scale (spec 05 §6.3).
+  const clock = Anim.create({
+    step: dt => {
+      if (!D || !isNum(D.drive.vBelt) || D.drive.vBelt <= 0) return false;
+      boxPhase += D.drive.vBelt * dt;
+      const gEl = $('cdBoxes'); if (gEl) gEl.innerHTML = boxesSvg(APP, APP.pal());
+      return true;
+    },
+  });
+
+  /* ------------------------------------------------------------ motor plot */
+  function motorPlot(app, p) {
+    const s = app.state, dr = D.drive, w = 300, h = 170;
+    const fr = Plot.frame({ width: w, height: h, margin: { l: 44, r: 10, t: 10, b: 34 }, x: [0, s.N0], y: [0, s.Ts], xLabel: 'motor speed (rpm)', yLabel: 'torque (N·m)', pal: p, idp: 'cdm' + uid, font: p.fontUi, includeZeroX: true, includeZeroY: true, xCount: 4, yCount: 4 });
+    let g = '<defs>' + fr.defs + '</defs>';
+    const band = (lo, hi, col, op) => { const y1 = fr.sy(s.Ts * hi), y0 = fr.sy(s.Ts * lo); return '<rect x="' + fr.box.x + '" y="' + n2(y1) + '" width="' + fr.box.w + '" height="' + n2(y0 - y1) + '" fill="' + col + '" opacity="' + op + '"/>'; };
+    g += band(0, 0.3, p.pass, 0.12) + band(0.3, 0.6, p.brass, 0.14) + band(0.6, 1, p.fail, 0.1);
+    g += fr.svg;
+    g += Plot.line([[0, s.Ts], [s.N0, 0]], fr.sx, fr.sy, { stroke: p.ink, width: 2 });
+    if (dr.op && !hid(app, 'pulley')) g += Plot.points([[dr.Nm, dr.op.Tm]], fr.sx, fr.sy, { fill: p.dykem, r: 5 }) + txt(fr.sx(dr.Nm) + 8, fr.sy(dr.op.Tm) - 6, esc(app.fmt(dr.op.pct)) + '% of stall', { fill: p.dykem, size: 11, weight: 700 });
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '" font-family="' + esc(p.fontUi) + '" role="img" aria-label="Motor torque-speed line with the operating point and duty bands">' + g + '</svg>';
+  }
+
+  /* ------------------------------------------------------------ step sections (Design tab) */
+  const row = (k, v, cls) => '<tr' + (cls ? ' class="' + cls + '"' : '') + '><th>' + k + '</th><td>' + v + '</td></tr>';
+  const reason = r => '<span class="reason">' + esc(r) + '</span>';
+  function stepStatus(st) {
+    const rs = D.reqs.filter(r => st.qty.indexOf(r.row.qty) >= 0 && (r.status === 'pass' || r.status === 'fail'));
+    if (!rs.length) return '';
+    return rs.some(r => r.status === 'fail') ? ' <span class="bad" title="a linked requirement fails">✗</span>' : ' <span class="ok" title="linked requirements pass">✓</span>';
+  }
+  function stepBody(app, st) {
+    const s = app.state, fu = (v, u) => esc(app.fmtU(v, u)), g = grpOf(st), sh = v => show(app, v, g);
+    const ld = D.load, bp = D.pull, pw = D.power, pu = D.pulley, dr = D.drive, tn = D.tensions, sl = D.side, sf = D.shaft;
+    let h = '<table class="ro">';
+    if (st.id === 'pull') {
+      h += row('Product mass per meter m′<sub>p</sub>', fu(ld.mp, 'kg/m'));
+      h += row('Throughput at the target speed', fu(ld.throughput, 'boxes/min'));
+      h += row('Boxes on the belt', ld.divides ? 'up to ' + ld.boxesMax : ld.boxesMin + ' to ' + ld.boxesMax);
+      h += row('Friction part', sh(fu(bp.fric, 'N')), 'sub');
+      h += row('Lift part', sh(fu(bp.lift, 'N')), 'sub');
+      h += row('Belt pull T<sub>e</sub>', sh(fu(bp.Te, 'N')));
+      if (D.hold) h += row('Backward pull, power off', sh(fu(D.hold.backward, 'N')));
+      h += '</table><p class="note">Belt pull does not depend on belt speed. Reference bed friction: 0.03 to 0.06 on UHMW, 0.15 to 0.30 on steel without UHMW. Measure yours with the ramp method (Friction and Screw Lab).</p>';
+      return h;
+    }
+    if (st.id === 'power') return h + row('Belt power P = T<sub>e</sub> v', sh(fu(pw.P, 'W'))) + row('Motor power needed (SF ' + esc(app.fmt(s.SF)) + ', η ' + esc(app.fmt(s.eta)) + ')', sh(fu(pw.Pmotor, 'W'))) + '</table>';
+    if (st.id === 'pulley') return h + row('Pulley torque T<sub>p</sub>', sh(fu(pu.Tp, 'N·m'))) + row('Pulley speed N<sub>p</sub>', sh(fu(pu.Np, 'rpm'))) + '</table>';
+    if (st.id === 'motor') {
+      const sv = dr.solver;
+      h += row('Ratio roots', sv.feasible ? sh(esc(app.fmt(sv.iHigh)) + (sv.iLow ? ' and ' + esc(app.fmt(sv.iLow)) : '')) : reason('no real root'));
+      h += row('Ratio used', dr.i === null ? reason('none') : esc(app.fmt(dr.i)) + (s.ratioMode === 'solver' ? ' (solver, larger root)' : ' (your ratio)'));
+      if (dr.op) {
+        h += row('Motor torque', sh(fu(dr.op.Tm, 'N·m') + ' = ' + fu(dr.op.pct, '% of stall')));
+        h += row('Duty band', sh(esc(dr.op.band)));
+        h += row('Motor / pulley speed', sh(fu(dr.Nm, 'rpm') + ' / ' + fu(dr.Nout, 'rpm')));
+        h += row('Loaded belt speed', sh(fu(dr.vBelt, 'm/s')));
+        h += row('Speed error against ' + fu(s.v, 'm/s'), sh(esc(U.fmtPct(dr.speedErr, app.settings.sig))));
+      }
+      h += row('Motor power margin', sh(esc(app.fmt(D.powerMargin)) + ' (no unit)'));
+      h += '</table>';
+      if (dr.reason) h += '<p class="note warn">' + esc(dr.reason.charAt(0).toUpperCase() + dr.reason.slice(1)) + '.</p>';
+      h += '<div class="mplot">' + motorPlot(app, app.pal()) + '</div><p class="note">The line is the motor; the dot is where it runs. Bands: continuous up to 30% of stall, short use to 60%, avoid above.</p>';
+      return h;
+    }
+    if (st.id === 'tensions') {
+      h += row('Capstan factor e<sup>μθ</sup>', sh(esc(app.fmt(tn.ef))));
+      h += row('T<sub>2,min</sub>', sh(fu(tn.T2min, 'N')));
+      h += row('Your tension setting T<sub>2</sub>', sh(fu(tn.T2, 'N')) + (s.T2auto ? ' <span class="small">(1.3 × T<sub>2,min</sub>)</span>' : ''));
+      h += row('Tight side T<sub>1</sub>', sh(fu(tn.T1, 'N')));
+      h += row('Slip margin', sh(esc(app.fmt(tn.margin)) + ' (no unit)'));
+      h += '</table>';
+      if (tn.slips) h += '<p class="note warn">The tension setting is below T<sub>2,min</sub>: the belt will slip on the drive pulley.</p>';
+      return h;
+    }
+    h += row('Side load R', sh(fu(sl.R, 'N')) + ' <span class="small">at ' + esc(app.fmt(sl.angleDeg)) + '°</span>');
+    h += row('Bending moment M = R L<sub>b</sub>/4', sh(fu(sf.M, 'N·m')));
+    h += row('Torque T<sub>p</sub>', fu(pu.Tp, 'N·m'));
+    h += row('τ<sub>max</sub> (Tresca)', sh(fu(sf.tauMax / 1e6, 'MPa')));
+    h += row('Safety factor n', sh(esc(app.fmt(sf.n)) + ' (no unit)'));
+    h += row('Bearing loads', sh(fu(D.bearing, 'N') + ' each'));
+    h += '</table>';
+    if (s.Sy === 400) h += '<p class="note warn">Placeholder value in use: 400 MPa is not a datasheet yield strength. Enter your shaft material\'s value.</p>';
+    return h;
+  }
+  function renderSteps(app) {
+    const box = $('cdSteps');
+    const open = {};
+    box.querySelectorAll('details[data-step]').forEach(d => { open[d.dataset.step] = d.open; });
+    box.innerHTML = STEPS.map((st, i) => '<details class="step" data-step="' + st.id + '" id="cdStep_' + st.id + '"' + (open[st.id] === false ? '' : ' open') + '><summary><span class="num">' + (i + 1) + '</span> ' + esc(st.title) + stepStatus(st) + '</summary><div class="stepb">' + stepBody(app, st) + '</div></details>').join('');
+    $('cdStrip').innerHTML = '<span class="lbl">Steps:</span> ' + ['<button type="button" class="link" data-goto="req">Requirements</button>'].concat(STEPS.map(st => '<button type="button" class="link" data-goto="' + st.id + '">' + esc(st.title) + stepStatus(st) + '</button>')).join(' <span aria-hidden="true">→</span> ');
+  }
+
+  /* ------------------------------------------------------------ requirements */
+  const QOPTS = Object.keys(C.QUANTITIES).map(k => [k, C.QUANTITIES[k].label]);
+  const CMPOPTS = [['within', 'target ± tolerance'], ['atLeast', 'at least'], ['atMost', 'at most']];
+  function buildReqEditor(app) {
+    const s = app.state, box = $('cdReqEd');
+    if (!s.reqs.length) { box.innerHTML = '<p class="note">No requirements yet. Add your team\'s numbered, measurable requirements, or start from the examples and edit them.</p>'; return; }
+    const opt = (list, v) => list.map(([k, l]) => '<option value="' + k + '"' + (k === v ? ' selected' : '') + '>' + esc(l) + '</option>').join('');
+    box.innerHTML = '<table class="reqed"><thead><tr><th>ID</th><th>Requirement</th><th>Quantity</th><th>Check</th><th>Target</th><th>Tol. %</th><th>Unit</th><th>Design value</th><th>Status</th><th></th></tr></thead><tbody>' +
+      s.reqs.map(r => {
+        const q = C.QUANTITIES[r.qty] || C.QUANTITIES.custom, man = r.qty === 'custom';
+        return '<tr data-id="' + r.id + '"><td>R' + r.id + '</td>' +
+          '<td><input data-f="desc" value="' + esc(r.desc || '') + '" aria-label="Requirement R' + r.id + ' description" maxlength="80"></td>' +
+          '<td><select data-f="qty" aria-label="R' + r.id + ' quantity">' + opt(QOPTS, r.qty) + '</select></td>' +
+          '<td>' + (man ? '<span class="small">by hand</span>' : '<select data-f="cmp" aria-label="R' + r.id + ' check">' + opt(CMPOPTS, r.cmp) + '</select>') + '</td>' +
+          '<td>' + (man ? '' : '<input data-f="target" class="num" inputmode="decimal" value="' + (isNum(r.target) ? U.fmtInput(r.target) : '') + '" aria-label="R' + r.id + ' target">') + '</td>' +
+          '<td>' + (!man && r.cmp === 'within' ? '<input data-f="tol" class="num" inputmode="decimal" value="' + (isNum(r.tol) ? U.fmtInput(r.tol) : '') + '" aria-label="R' + r.id + ' tolerance in percent">' : '') + '</td>' +
+          '<td>' + esc(q.unit) + '</td><td class="val" id="cdRV' + r.id + '"></td><td class="st" id="cdRS' + r.id + '"></td>' +
+          '<td><button class="btn small danger" data-rm="' + r.id + '" type="button" aria-label="Remove R' + r.id + '">✕</button></td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+  function wireReqEditor(app) {
+    const box = $('cdReqEd');
+    const find = el => app.state.reqs.find(r => r.id === +el.closest('tr').dataset.id);
+    box.addEventListener('input', e => {
+      const el = e.target, f = el.dataset.f; if (!f) return;
+      const r = find(el);
+      if (f === 'desc') r.desc = el.value;
+      else if (f === 'target' || f === 'tol') {
+        const v = el.value.trim() === '' ? null : U.parseNumber(el.value);
+        if (v !== null && !isNum(v)) { el.setAttribute('aria-invalid', 'true'); return; }
+        el.removeAttribute('aria-invalid'); r[f] = v;
+      }
+      app.changed({ keepPrediction: true });
+    });
+    box.addEventListener('change', e => {
+      const el = e.target, f = el.dataset.f; if (f !== 'qty' && f !== 'cmp') return;
+      const r = find(el);
+      if (f === 'qty') { r.qty = el.value; r.cmp = C.QUANTITIES[r.qty].cmp; if (!r.desc) r.desc = C.QUANTITIES[r.qty].label; }
+      else r.cmp = el.value;
+      buildReqEditor(app); app.changed({ keepPrediction: true });
+    });
+    box.addEventListener('click', e => {
+      const b = e.target.closest('[data-rm]'); if (!b) return;
+      app.state.reqs = app.state.reqs.filter(r => r.id !== +b.dataset.rm);
+      buildReqEditor(app); app.changed({ keepPrediction: true });
+    });
+  }
+  const STATUS = { pass: '<span class="ok">pass</span>', fail: '<span class="bad">fail</span>', manual: '<span class="man">manual</span>', undefined: '<span class="reason">not defined</span>' };
+  function reqText(app, r) {
+    const q = r.q, row2 = r.row, u = q.unit ? ' ' + q.unit : '';
+    if (r.cmp === 'manual') return row2.desc || 'Custom';
+    const t = isNum(row2.target) ? app.fmt(row2.target) : '?';
+    return (row2.desc || q.label) + ' ' + (r.cmp === 'within' ? t + u + ' ±' + (isNum(row2.tol) ? app.fmt(row2.tol) : '0') + '%' : (r.cmp === 'atLeast' ? '≥ ' : '≤ ') + t + u);
+  }
+  function reqValue(app, r) {
+    if (r.cmp === 'manual') return '—';
+    if (!isNum(r.value)) return 'not defined';
+    // A value that comes from a hidden prediction step stays hidden.
+    const g = { speed: 'pulley', throughput: 'pulley', duty: 'pulley', powerMargin: 'pulley', slip: 'tensions', shaftN: 'shaft' }[r.row.qty];
+    if (g && hid(app, g)) return '?';
+    return app.fmt(r.value) + (r.q.unit ? ' ' + r.q.unit : ' (no unit)') + (r.cmp === 'within' && isNum(r.diff) ? ' (' + U.fmtPct(r.diff, app.settings.sig) + ')' : '');
+  }
+  function reqStatus(app, r) {
+    const g = { speed: 'pulley', throughput: 'pulley', duty: 'pulley', powerMargin: 'pulley', slip: 'tensions', shaftN: 'shaft' }[r.row.qty];
+    if (g && hid(app, g) && (r.status === 'pass' || r.status === 'fail')) return '<span class="masked" aria-label="hidden until you check your prediction">?</span>';
+    return STATUS[r.status];
+  }
+  function reqTable(app, forPrint) {
+    if (!D.reqs.length) return '<p>No requirements entered.</p>';
+    return '<table' + (forPrint ? '' : ' class="reqsum"') + '><tr class="hd"><th>ID</th><th>Requirement</th><th>Linked output</th><th>Design value</th><th>Status</th></tr>' +
+      D.reqs.map(r => '<tr><td>R' + r.row.id + '</td><td>' + esc(reqText(app, r)) + '</td><td>' + esc(r.q.output) + '</td><td class="mono">' + esc(reqValue(app, r)) + '</td><td>' + (forPrint ? (r.status === 'undefined' ? 'not defined' : r.status) : reqStatus(app, r)) + '</td></tr>').join('') + '</table>';
+  }
+
+  /* ------------------------------------------------------------ right column */
+  function results(app) {
+    if (!D) return '<div class="sec-h">Design</div><p class="reason">' + esc(app.invalidReason()) + '.</p>';
+    const fu = (v, u) => esc(app.fmtU(v, u)), dr = D.drive;
+    let h = '<div class="sec-h">Design</div><table class="ro">';
+    h += row('Belt pull T<sub>e</sub>', show(app, fu(D.pull.Te, 'N'), 'pull'));
+    h += row('Belt / motor power (SF ' + esc(app.fmt(app.state.SF)) + ')', show(app, fu(D.power.P) + ' / ' + fu(D.power.Pmotor, 'W'), 'power'));
+    h += row('Pulley torque / speed', show(app, fu(D.pulley.Tp, 'N·m') + ' / ' + fu(D.pulley.Np, 'rpm'), 'pulley'));
+    h += row('Loaded belt speed', isNum(dr.vBelt) ? show(app, fu(dr.vBelt, 'm/s'), 'pulley') : reason(dr.reason || 'not defined'));
+    h += row('T<sub>2,min</sub> / setting / T<sub>1</sub>', show(app, fu(D.tensions.T2min) + ' / ' + fu(D.tensions.T2) + ' / ' + fu(D.tensions.T1, 'N'), 'tensions'));
+    h += row('Side load R / shaft n', show(app, fu(D.side.R, 'N') + ' / ' + esc(app.fmt(D.shaft.n)), 'shaft'));
+    const pass = D.reqs.filter(r => r.status === 'pass').length, fail = D.reqs.filter(r => r.status === 'fail').length;
+    h += row('Requirements', D.reqs.length ? pass + ' pass, ' + fail + ' fail' : 'none yet');
+    h += '</table>';
+    if (D.tensions.slips) h += '<p class="note warn">The belt will slip: the tension setting is below T<sub>2,min</sub>.</p>';
+    h += '<div class="btnrow"><button class="btn" id="cdExpShaft" type="button">Export shaft loads</button><button class="btn" id="cdExpDrive" type="button">Send to Motor Matcher</button><button class="btn" id="cdExpGear" type="button">Build this in the Gear Train Workbench</button></div>';
+    return h;
+  }
+  function download(app, kind, obj) {
+    const name = U.exportName({ student: app.student(), tool: 'conveyor-designer', context: kind, dateISO: U.localDateISO(), ext: 'json' });
+    app.download(name, JSON.stringify(obj, null, 2), 'application/json');
+    return name;
+  }
+
+  /* ------------------------------------------------------------ design record */
+  function recordPreview(app) {
+    if (!D) return '';
+    return '<div class="sec-h">Requirements</div>' + reqTable(app, false) +
+      '<p class="note">The printed design record starts with this table, then the side view, all inputs and results with units, each design step\'s working in order, your prediction history and the sources. It is laid out for letter paper.</p>' +
+      '<div class="btnrow"><button class="btn primary" id="cdPrint" type="button">Print the design record</button></div>';
+  }
+
+  /* ------------------------------------------------------------ help */
+  const HELP = {
+    html: '<p>Your capstone conveyor, one design step at a time, in the same order as the unit\'s design process. Every requirement shows pass or fail as the numbers change, and the design record is your team\'s calculation package.</p>' +
+      '<h3>1. Requirements first</h3><p>On the Requirements tab, turn the brief into numbered, measurable requirements: a quantity, a check (target ± tolerance, at least, or at most) and a target. Custom rows (for example "guards on both nip points") are checked by hand.</p>' +
+      '<h3>2. Design steps</h3><ol><li><strong>Belt pull</strong> for a slider bed: T<sub>e</sub> = μ g (m′<sub>b</sub> + m′<sub>p</sub>) L + m′<sub>p</sub> g H, with m′<sub>p</sub> = m<sub>box</sub> / s. It does not depend on speed. On an incline the friction term uses the full weight, which is on the safe side.</li>' +
+      '<li><strong>Power</strong> P = T<sub>e</sub> v. Motor power needed = P × service factor ÷ η. Service factors: 1.5 normal, 2.0 heavy, 2.5 to 3.0 severe duty.</li>' +
+      '<li><strong>Pulley</strong>: T<sub>p</sub> = T<sub>e</sub> D/2 and N<sub>p</sub> = 60 v / (π D), from v = ω r.</li>' +
+      '<li><strong>Motor and ratio</strong>: the same model as the Motor and Drive Matcher. The ratio comes from the loaded speed, not the no-load speed, and the larger root keeps the motor cool. Or enter your own ratio and see the belt speed it gives.</li>' +
+      '<li><strong>Tensions and slip</strong>: T<sub>1</sub> = T<sub>e</sub> + T<sub>2</sub>, and the belt slips if T<sub>1</sub>/T<sub>2</sub> > e<sup>μθ</sup> (θ in radians). So T<sub>2</sub> must be at least T<sub>e</sub> / (e<sup>μθ</sup> − 1). The default setting is 1.3 times that.</li>' +
+      '<li><strong>Shaft and bearings</strong>: the two belt spans add as vectors to the side load R. With the pulley centred, M = R L<sub>b</sub>/4, and the shaft check is the Tresca check from the Shaft and Beam Workbench. Each bearing carries R/2.</li></ol>' +
+      '<h3>Working with other tools</h3><p><strong>Export shaft loads</strong> saves the side load and torque for the Shaft and Beam Workbench. <strong>Send to Motor Matcher</strong> saves a drive request; the Motor and Drive Matcher\'s "Export drive result" file can then be loaded back here with Load, which sets the motor and your ratio. <strong>Build this in the Gear Train Workbench</strong> saves the same drive request; the Workbench reads it once its planned upgrade is done, so use the Motor and Drive Matcher until then.</p>' +
+      '<h3>What industrial design adds</h3><p>Version 1 is a slider-bed conveyor carrying boxes. Industrial designs also handle roller beds and troughed bulk conveyors (the CEMA method), several drives, snub pulleys, start-up acceleration forces and belt selection by strength rating.</p>',
+    units: 'Calculations use g = 9.81 m/s². The wrap angle is entered in degrees and turned into radians for e^(μθ).',
+    keys: [['Tab', 'Move between inputs, steps and buttons'], ['Enter on a step heading', 'Open or close that step']],
+    teacher: '<p>The yield strength starts at a placeholder 400 MPa, flagged in the readout until the team enters a datasheet value. The motor starts as the example motor from the Motor and Drive Matcher (2 N·m, 300 rpm).</p>' +
+      '<p>Choices to review (QUESTIONS): motor power margin uses the motor\'s maximum power T<sub>s</sub>ω<sub>0</sub>/4 (Q19); one drive efficiency η is used for both the power and the gearbox (Q20); requirements have a check type (Q21); the shaft-loads export points the side load along the belt, toward the tail (Q22); throughput in the requirements uses the loaded belt speed (Q35).</p>' +
+      '<p>CD-5 and CD-6 in the spec use rounded linked values (0.68 N·m, 95.5 rpm); with full precision the speed error shows −11.9% rather than −12.0% (ERRATA).</p>',
+    sources: [
+      { title: 'PackagingConveyor.com, conveyor engineering calculations', url: 'https://packagingconveyor.com/resources/conveyor-design-guide/conveyor-engineering/' },
+      { title: 'Rulmeca, how to calculate conveyor belt tensions', url: 'https://www.rulmeca.blog/question-and-answer/how-to-calculate-conveyor-belt-tensions/' },
+      { title: 'BisonConvey, capstan equation', url: 'https://bisonconvey.com/glossary/capstan-equation-eytelwein/' },
+      { title: 'Wikipedia, capstan equation', url: 'https://en.wikipedia.org/wiki/Capstan_equation' },
+      { title: 'Spec 01 (Shaft and Beam Workbench) and spec 02 (Motor and Drive Matcher) of this package, for the shaft and motor models' },
+      { title: 'OpenStax University Physics Vol. 1, 10.8 (v = ω r, rpm to rad/s)', url: 'https://openstax.org/books/university-physics-volume-1/pages/10-8-work-and-power-for-rotational-motion' },
+    ],
+  };
+
+  /* ------------------------------------------------------------ the tool */
+  APP = Shell.create({
+    tool: 'Conveyor Designer', repo: 'ConveyorDesigner', slug: 'conveyor-designer', version: VERSION, schemaVersion: 1,
+    subtitle: 'Engineering education · Capstone drive design',
+    defaultState: C.defaultState,
+    tabs: { label: 'Views', options: [{ id: 'requirements', label: 'Requirements' }, { id: 'design', label: 'Design' }, { id: 'record', label: 'Design record' }], get: a => a.state.tab, set: (a, v) => { a.state.tab = v; } },
+    help: HELP,
+    imports: {
+      'drive-result': (app, text) => {
+        const res = Schemas.readDriveResult(text);
+        const notes = C.applyDriveResult(app.state, res);
+        app.refreshFields(); app.changed();
+        app.toast('Loaded the drive result from the ' + (res.value.source || 'Motor and Drive Matcher') + ': motor ' + app.fmtU(app.state.Ts, 'N·m') + ', ' + app.fmtU(app.state.N0, 'rpm') + ', ratio ' + app.fmt(app.state.ratio) + '.' + (notes.concat(res.warnings).length ? ' ' + notes.concat(res.warnings).join(' ') : ''), 7000);
+      },
+    },
+    afterLoad(app) {
+      const s = app.state;
+      if (['requirements', 'design', 'record'].indexOf(s.tab) < 0) s.tab = 'requirements';
+      if (!Array.isArray(s.reqs)) s.reqs = [];
+      s.nextReq = Math.max(s.nextReq || 1, ...s.reqs.map(r => r.id + 1), 1);
+      if (s.ratioMode !== 'hand') s.ratioMode = 'solver';
+      if ($('cdReqEd')) buildReqEditor(app);
+    },
+    build(app) {
+      const I = app.el.inputs, F = C.FIELDS;
+      const sec = html => { const d = document.createElement('div'); d.innerHTML = html; I.appendChild(d); return d; };
+      const num = (parent, id, key, label, step, extra) => app.numField(parent, Object.assign({ id, key, label, step, get: a => a.state[key], set: (a, v) => { a.state[key] = v; } }, F[key], extra || {}));
+      sec('<div class="sec-h">Requirements</div><div id="cdReqSide"></div>');
+      const ld = sec('<div class="sec-h">Load</div>');
+      num(ld, 'cdMBox', 'mBox', 'Box mass', 0.1); num(ld, 'cdS', 's', 'Box spacing s', 0.05); num(ld, 'cdV', 'v', 'Target belt speed v', 0.01);
+      const bd = sec('<div class="sec-h">Bed</div>');
+      num(bd, 'cdL', 'L', 'Bed length L', 0.1, { check: (v, a) => C.liftCheck(a.state.H, v) });
+      num(bd, 'cdH', 'H', 'Lift H', 0.05, { check: (v, a) => C.liftCheck(v, a.state.L) });
+      num(bd, 'cdMb', 'mb', 'Belt mass per meter m′<sub>b</sub>', 0.05); num(bd, 'cdMu', 'mu', 'Bed friction μ', 0.01);
+      const pw = sec('<div class="sec-h">Power</div>');
+      num(pw, 'cdSF', 'SF', 'Service factor', 0.1); num(pw, 'cdEta', 'eta', 'Drive efficiency η', 0.01);
+      const pu = sec('<div class="sec-h">Drive pulley and motor</div>');
+      num(pu, 'cdD', 'D', 'Pulley diameter D', 5);
+      num(pu, 'cdTs', 'Ts', 'Motor stall torque T<sub>s</sub>', 0.1); num(pu, 'cdN0', 'N0', 'No-load speed N<sub>0</sub>', 10);
+      app.selectField(pu, { id: 'cdRM', label: 'Ratio', options: [['solver', 'From the solver'], ['hand', 'My ratio']], get: a => a.state.ratioMode, set: (a, v) => { a.state.ratioMode = v; } });
+      const rb = sec(''); rb.id = 'cdRatioBox'; pu.appendChild(rb);
+      num(rb, 'cdRatio', 'ratio', 'Chosen ratio i', 0.01);
+      const tb = sec('<div class="sec-h">Belt tension</div>');
+      num(tb, 'cdMuP', 'muP', 'Pulley friction μ<sub>p</sub>', 0.01); num(tb, 'cdWrap', 'wrap', 'Wrap angle θ', 5);
+      app.checkField(tb, { id: 'cdT2a', label: 'Set T₂ to 1.3 × T₂,min', get: a => a.state.T2auto, set: (a, v) => { a.state.T2auto = v; if (!v && D) a.state.T2 = Number(D.tensions.T2.toPrecision(3)); a.refreshFields(); } });
+      const t2 = sec(''); t2.id = 'cdT2Box'; tb.appendChild(t2);
+      num(t2, 'cdT2', 'T2', 'Your belt tension setting T<sub>2</sub>', 0.5);
+      const shs = sec('<div class="sec-h">Pulley shaft</div>');
+      num(shs, 'cdLb', 'Lb', 'Bearing span L<sub>b</sub>', 5); num(shs, 'cdDs', 'dShaft', 'Shaft diameter d', 0.5); num(shs, 'cdSy', 'Sy', 'Yield strength S<sub>y</sub>', 10);
+
+      app.el.stage.innerHTML =
+        '<div id="cdTabReq"><div class="sec-h">Requirements</div><div id="cdReqEd"></div><div class="btnrow"><button class="btn" id="cdAddReq" type="button">+ Add requirement</button><button class="btn" id="cdExReq" type="button">Add the example requirements</button></div></div>' +
+        '<div id="cdNoReq" class="banner" hidden>No requirements yet. Start on the Requirements tab; the design still works without them.</div>' +
+        '<div class="drawcard" id="cdDraw"></div>' +
+        '<div id="cdTabDesign"><p class="strip" id="cdStrip"></p><div id="cdSteps"></div></div>' +
+        '<div id="cdTabRec"></div>';
+      $('cdAddReq').addEventListener('click', () => { const s = app.state; s.reqs.push({ id: s.nextReq++, desc: '', qty: 'speed', cmp: 'within', target: null, tol: 10 }); buildReqEditor(app); app.changed({ keepPrediction: true }); const ins = $('cdReqEd').querySelectorAll('input[data-f="desc"]'); if (ins.length) ins[ins.length - 1].focus(); });
+      $('cdExReq').addEventListener('click', () => { const s = app.state; const ex = C.exampleRequirements(s.nextReq); s.reqs = s.reqs.concat(ex); s.nextReq += ex.length; buildReqEditor(app); app.changed({ keepPrediction: true }); app.announce('Added ' + ex.length + ' example requirements.'); });
+      wireReqEditor(app); buildReqEditor(app);
+      app.el.stage.addEventListener('click', e => {
+        const g = e.target.closest('[data-goto]');
+        if (g) { if (g.dataset.goto === 'req') { app.selectTab('requirements'); return; } const d = $('cdStep_' + g.dataset.goto); if (d) { d.open = true; d.scrollIntoView({ block: 'nearest' }); d.querySelector('summary').focus(); } return; }
+        if (e.target.id === 'cdPrint') $('shReport').click();
+      });
+      app.el.results.addEventListener('click', e => {
+        if (!D) return;
+        if (e.target.id === 'cdExpShaft') { const n = download(app, 'shaft-loads', Schemas.makeShaftLoads('Conveyor Designer', [C.shaftLoads(D)], ['Drive pulley centred on a ' + app.fmtU(app.state.Lb, 'mm') + ' bearing span.'])); app.toast('Saved ' + n + '. Load it in the Shaft and Beam Workbench.'); }
+        if (e.target.id === 'cdExpDrive' || e.target.id === 'cdExpGear') {
+          const n = download(app, 'drive-request', Schemas.makeDriveRequest('Conveyor Designer', C.driveRequest(D, app.state)));
+          app.toast(e.target.id === 'cdExpDrive' ? 'Saved ' + n + '. Load it in the Motor and Drive Matcher, then load its drive result back here.' : 'Saved ' + n + '. The Gear Train Workbench reads drive requests after its planned upgrade; until then, use the Motor and Drive Matcher.', 7000);
+        }
+      });
+      window.__cd = { clock, design: () => D, phase: () => boxPhase };
+    },
+    render(app) {
+      const s = app.state;
+      app.fields.filter(x => x.o.id === 'cdL' || x.o.id === 'cdH').forEach(x => x.revalidate());
+      D = app.hasInvalid() ? null : C.design(s);
+      $('cdRatioBox').hidden = s.ratioMode !== 'hand';
+      $('cdT2Box').hidden = s.T2auto;
+      $('cdTabReq').hidden = s.tab !== 'requirements';
+      $('cdTabDesign').hidden = s.tab !== 'design';
+      $('cdTabRec').hidden = s.tab !== 'record';
+      $('cdNoReq').hidden = !(s.tab === 'design' && !s.reqs.length);
+      $('cdDraw').innerHTML = draw(app).svg;
+      if (D) {
+        renderSteps(app);
+        D.reqs.forEach(r => { const v = $('cdRV' + r.row.id), st = $('cdRS' + r.row.id); if (v) v.textContent = reqValue(app, r); if (st) st.innerHTML = reqStatus(app, r); });
+        $('cdReqSide').innerHTML = D.reqs.length ? '<table class="ro reqside">' + D.reqs.map(r => '<tr><th>R' + r.row.id + ' ' + esc(reqText(app, r)) + '</th><td>' + reqStatus(app, r) + '</td></tr>').join('') + '</table>' : '<p class="note">None yet.</p>';
+        $('cdTabRec').innerHTML = recordPreview(app);
+        if (isNum(D.drive.vBelt) && D.drive.vBelt > 0) { if (!clock.running) clock.start(); } else clock.stop();
+      }
+      app.el.results.innerHTML = results(app);
+      const f = v => app.fmt(v), fu = (v, u) => app.fmtU(v, u);
+      app.setWorking(D ? C.working(D, s, f, fu) : []);
+      app.describe(D ? C.describe(D, s, fu, app.masked()) : 'The drawing cannot update until the highlighted input is fixed.');
+    },
+    drawing: (app, opts) => draw(app, opts),
+    predictTargets: app => D ? C.targets(D) : [],
+    inputsSnapshot: app => C.snapshot(app.state),
+    report(app) {
+      const s = app.state, fu = app.fmtU;
+      const inputs = [
+        ['Box mass, spacing', fu(s.mBox, 'kg') + ', ' + fu(s.s, 'm')], ['Target belt speed v', fu(s.v, 'm/s')], ['Bed length L, lift H', fu(s.L, 'm') + ', ' + fu(s.H, 'm')],
+        ['Belt mass per meter', fu(s.mb, 'kg/m')], ['Bed friction μ', app.fmt(s.mu) + ' (no unit)'], ['Service factor, drive efficiency η', app.fmt(s.SF) + ', ' + app.fmt(s.eta) + ' (no unit)'],
+        ['Pulley diameter D', fu(s.D, 'mm')], ['Motor stall torque, no-load speed', fu(s.Ts, 'N·m') + ', ' + fu(s.N0, 'rpm')],
+        ['Ratio', s.ratioMode === 'solver' ? 'from the solver' : app.fmt(s.ratio) + ' (no unit)'], ['Pulley friction μp, wrap θ', app.fmt(s.muP) + ' (no unit), ' + fu(s.wrap, '°')],
+        ['Belt tension setting', s.T2auto ? '1.3 × T₂,min' : fu(s.T2, 'N')], ['Bearing span, shaft d, Sy', fu(s.Lb, 'mm') + ', ' + fu(s.dShaft, 'mm') + ', ' + fu(s.Sy, 'MPa') + (s.Sy === 400 ? ' (placeholder value)' : '')],
+      ];
+      if (!D) return { inputs, outputs: [['Results', app.invalidReason()]] };
+      const H = (v, g) => app.masked(g) ? 'hidden until checked' : v, dr = D.drive;
+      const outputs = [
+        ['Product mass per meter m′p', fu(D.load.mp, 'kg/m')], ['Throughput at the target speed', fu(D.load.throughput, 'boxes/min')],
+        ['Belt pull Te (friction + lift)', H(fu(D.pull.Te, 'N') + ' (' + fu(D.pull.fric, 'N') + ' + ' + fu(D.pull.lift, 'N') + ')', 'pull')],
+        ['Belt power P, motor power needed', H(fu(D.power.P, 'W') + ', ' + fu(D.power.Pmotor, 'W'), 'power')],
+        ['Pulley torque Tp, speed Np', H(fu(D.pulley.Tp, 'N·m') + ', ' + fu(D.pulley.Np, 'rpm'), 'pulley')],
+        ['Ratio used', dr.i === null ? 'none: ' + dr.reason : H(app.fmt(dr.i) + ' (no unit)', 'pulley')],
+        ['Motor torque, % of stall, band', dr.op ? H(fu(dr.op.Tm, 'N·m') + ', ' + fu(dr.op.pct, '%') + ', ' + dr.op.band, 'pulley') : '—'],
+        ['Loaded belt speed, error', isNum(dr.vBelt) ? H(fu(dr.vBelt, 'm/s') + ', ' + U.fmtPct(dr.speedErr, app.settings.sig), 'pulley') : '—'],
+        ['Motor power margin', H(app.fmt(D.powerMargin) + ' (no unit)', 'pulley')],
+        ['T₂,min, setting T₂, T₁', H(fu(D.tensions.T2min, 'N') + ', ' + fu(D.tensions.T2, 'N') + ', ' + fu(D.tensions.T1, 'N'), 'tensions')],
+        ['Slip margin', H(app.fmt(D.tensions.margin) + ' (no unit)' + (D.tensions.slips ? ': the belt will slip' : ''), 'tensions')],
+        ['Side load R, bearing loads', H(fu(D.side.R, 'N') + ', ' + fu(D.bearing, 'N') + ' each', 'shaft')],
+        ['Shaft M, τmax, n', H(fu(D.shaft.M, 'N·m') + ', ' + fu(D.shaft.tauMax / 1e6, 'MPa') + ', ' + app.fmt(D.shaft.n) + ' (no unit)', 'shaft')],
+      ];
+      if (D.hold) outputs.push(['Incline: backward pull with power off', H(fu(D.hold.backward, 'N'), 'pull')]);
+      return { lead: [{ title: 'Requirements', html: reqTable(app, true) }], inputs, outputs };
+    },
+  });
+})();
+</script>
+</body>
+</html>
