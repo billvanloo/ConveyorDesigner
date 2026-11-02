@@ -291,7 +291,7 @@ table.reqsum tr.hd th{font:700 11px var(--font-ui);letter-spacing:.05em;text-tra
 <noscript>This tool needs JavaScript turned on.</noscript>
 <script>
 /* BEGIN vendor:prediction-log.js */
-// ecosystem/prediction-log.js v1.1.0
+// ecosystem/prediction-log.js v1.2.0
 // Prediction Log record format (spec 07 Part A). Pure functions, no DOM.
 // Every tool writes records through this module so the Collector can merge them.
 const PredictionLog = (function () {
@@ -432,7 +432,8 @@ const PredictionLog = (function () {
       if (head.indexOf(need) < 0) throw new Error('the header row has no "' + need + '" column');
     }
     const warnings = [];
-    const records = rows.slice(1).map(cells => {
+    // Spreadsheets often add rows of empty cells at the end; they are not records.
+    const records = rows.slice(1).filter(cells => cells.some(c => String(c).trim() !== '')).map(cells => {
       const o = {};
       head.forEach((h, k) => { o[h] = cells[k] === undefined ? '' : cells[k]; });
       return normalize(o, warnings);
@@ -454,6 +455,7 @@ const PredictionLog = (function () {
     for (const f of ['tool', 'toolVersion', 'student', 'team', 'classPeriod', 'problemId', 'quantity', 'unit', 'timestamp', 'note']) {
       r[f] = o[f] == null ? '' : String(o[f]);
     }
+    r.timestamp = normTimestamp(r.timestamp);
     if (!r.student) r.student = 'unnamed';
     for (const f of NUMERIC) r[f] = toNumOrNull(o[f]);
     r.attempt = Math.max(1, Math.round(toNumOrNull(o.attempt) || 1));
@@ -471,9 +473,9 @@ const PredictionLog = (function () {
     catch (e) { throw new Error('this is not valid JSON (' + e.message + ')'); }
     const warnings = [];
     let list;
+    if (data && !Array.isArray(data) && data.schema && data.schema !== SCHEMA) throw new Error('this is a "' + data.schema + '" file, not a prediction log');
     if (Array.isArray(data)) list = data;
     else if (data && Array.isArray(data.records)) {
-      if (data.schema && data.schema !== SCHEMA) throw new Error('this is a "' + data.schema + '" file, not a prediction log');
       if (toNumOrNull(data.schemaVersion) > SCHEMA_VERSION) warnings.push(NEWER_WARNING);
       list = data.records;
     } else throw new Error('no "records" list was found');
@@ -486,7 +488,26 @@ const PredictionLog = (function () {
     return fromCSV(String(text));
   }
 
-  const dupKey = r => [r.student, r.tool, r.problemId, r.quantity, r.attempt, r.timestamp].join('\u0001');
+  // A spreadsheet can rewrite a timestamp in its own date format (spec 07 PL-11). Bring the common
+  // forms back to ISO 8601. The wall-clock time is kept; an offset that was dropped can't be recovered.
+  function normTimestamp(t) {
+    const s = String(t == null ? '' : t).trim();
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?/.test(s)) return s;
+    const p2 = n => String(n).padStart(2, '0');
+    let m = /^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(s);
+    if (m) return m[1] + '-' + p2(m[2]) + '-' + p2(m[3]) + 'T' + p2(m[4]) + ':' + m[5] + ':' + p2(m[6] || 0);
+    m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})[ ,]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AaPp][Mm])?$/.exec(s);
+    if (m) {
+      let hh = +m[4];
+      if (m[7]) { const pm = /p/i.test(m[7]); if (hh === 12) hh = pm ? 12 : 0; else if (pm) hh += 12; }
+      return m[3] + '-' + p2(m[1]) + '-' + p2(m[2]) + 'T' + p2(hh) + ':' + m[5] + ':' + p2(m[6] || 0);
+    }
+    return s;
+  }
+  // Duplicates match on the wall-clock time (to the second), so a log re-saved by a spreadsheet
+  // that dropped the time zone still matches its original.
+  const wallClock = t => { const s = normTimestamp(t); return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(s) ? s.slice(0, 19) : s; };
+  const dupKey = r => [r.student, r.tool, r.problemId, r.quantity, r.attempt, wallClock(r.timestamp)].join('\u0001');
   function dedupe(records) {
     const seen = new Set(), out = [];
     for (const r of records) { const k = dupKey(r); if (!seen.has(k)) { seen.add(k); out.push(r); } }
@@ -506,7 +527,7 @@ const PredictionLog = (function () {
 
   return {
     SCHEMA, SCHEMA_VERSION, FIELDS, NEWER_WARNING,
-    pctDiff, isoLocal, shortHash, stableStringify, sandboxProblemId, nextAttempt,
+    pctDiff, isoLocal, shortHash, stableStringify, sandboxProblemId, nextAttempt, normTimestamp, wallClock,
     makeRecord, annotate, annotateLatest, toJSON, toCSV, fromCSV, fromJSON, parseFile, parseCSVRows, dedupe, toTSVRow,
   };
 })();
