@@ -8,7 +8,7 @@ Part of **[Engineered by the Numbers](https://github.com/billvanloo/EngineeredBy
 
 ## Quick start
 
-**Online:** enable GitHub Pages for this repo (Settings → Pages → Deploy from a branch → `main`, `/ (root)`) and share the URL.
+**Online:** open **https://billvanloo.github.io/ConveyorDesigner/** and share the link. GitHub Pages serves it from `main`, so every merge to `main` publishes within a minute or two.
 
 **Offline:** download `index.html` and open it in any current browser. It's one self-contained file with no network calls, and works on a Chromebook.
 
